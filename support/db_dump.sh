@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-set -x
+
 # set path to main postgresql database only when it is not already set
 PGDATA=${PGDATA:-/var/lib/postgresql/data}
 
