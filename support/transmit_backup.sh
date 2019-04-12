@@ -1,6 +1,6 @@
 #!/bin/bash
-set -e
-set -x # verbose
+set -e # abort on error
+#set -x # verbose
 
 # NOTE WELL - This script ASSUMES that it is located in export/support and that export/backup exists.
 
@@ -12,21 +12,22 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
   [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
-EXPORT_ROOT=$DIR/..
+cd $DIR/..
+EXPORT_ROOT=`pwd`
 # now we should be in the export directory
 
-# record a copy of configuration settings passed through environment variables
-ENV_BACKUP=$EXPORT_ROOT/backup/galaxy_env.txt
-if [ -f $ENV_BACKUP ]; then
-  rm $ENV_BACKUP
-fi
-RUN_LIST=$(docker-compose ps | grep '^[a-zA-Z]' | cut -f 1 -d ' ')
-for a in $RUN_LIST; do
-  echo '---' >> $ENV_BACKUP
-  echo "# environment variables for service $a" >> $ENV_BACKUP
-  docker exec $a bash -c "printenv" | sort >> $ENV_BACKUP
-  echo '...' >> $ENV_BACKUP
-done
+# # record a copy of configuration settings passed through environment variables
+# ENV_BACKUP=$EXPORT_ROOT/backup/galaxy_env.txt
+# if [ -f $ENV_BACKUP ]; then
+#   rm $ENV_BACKUP
+# fi
+# RUN_LIST=$(docker-compose ps | grep '^[a-zA-Z]' | cut -f 1 -d ' ')
+# for a in $RUN_LIST; do
+#   echo '---' >> $ENV_BACKUP
+#   echo "# environment variables for service $a" >> $ENV_BACKUP
+#   docker exec $a bash -c "printenv" | sort >> $ENV_BACKUP
+#   echo '...' >> $ENV_BACKUP
+# done
 
 # save the files used to copy data and config to the bucket (outside of Galaxy)
 $EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/s3/
