@@ -2,12 +2,13 @@
 set -e
 
 # ensure that path /export/backup/config exists and is owned by galaxy
-if [ ! -d /export/backup ]; then mkdir /export/backup; fi
-if [ ! -d /export/backup/config ]; then mkdir /export/backup/config; fi
-cd /export/backup/config
-chown galaxy .
+if [ ! -d /export/backup/config ]; then
+  mkdir -p /export/backup/config
+  chown galaxy:galaxy /export/backup/config
+fi
 
 # init CVS repository at /export/backup/config, owned by galaxy
+cd /export/backup/config
 if [ ! -d CVSROOT ]; then su -l -c '
   cvs -d /export/backup/config init
 ' galaxy; fi
@@ -26,5 +27,6 @@ if [ ! -d /export/galaxy-central/config/CVS ]; then su -l -c '
 su -l -c '
   cd /export/galaxy-central/config
   cvs add *.xml
+  cvs add *.yml
   cvs commit -m "commit of config files for backup - $(date)"
 ' galaxy
