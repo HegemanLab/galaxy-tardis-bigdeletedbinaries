@@ -30,26 +30,26 @@ shift # Remove first argument from the argument list
 case "$subcommand" in
   backup)
     echo ---
-    echo `date --iso-8601=seconds` Backup starting
+    echo `date -I'seconds'` Backup starting
     echo "Collecting Galaxy configuration"
     docker exec galaxy-init bash -c "ln -s /export/support/cvs /usr/local/bin/cvs; /export/support/config_xml_dump.sh; rm /usr/local/bin/cvs"
     echo "Collecting Galaxy database records"
     docker exec galaxy-postgres /export/support/db_dump.sh
-    echo `date --iso-8601=seconds` Backup ended
+    echo `date -I'seconds'` Backup ended
     echo ...
   ;;
   transmit)
     echo ---
-    echo `date --iso-8601=seconds` Transmit starting
+    echo `date -I'seconds'` Transmit starting
     bash $DIR/transmit_backup.sh
-    echo `date --iso-8601=seconds` Transmit ended
+    echo `date -I'seconds'` Transmit ended
     echo ...
   ;;
   restore)
     echo ---
-    echo `date --iso-8601=seconds` Restore starting
+    echo `date -I'seconds'` Restore starting
     echo "WARNING 'restore' not yet implemented."
-    echo `date --iso-8601=seconds` Restore ended
+    echo `date -I'seconds'` Restore ended
     echo ...
   ;;
   bash)
