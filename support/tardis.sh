@@ -51,6 +51,9 @@ case "$subcommand" in
     echo `date --iso-8601=seconds` Restore ended
     echo ...
   ;;
+  bash)
+    bash
+  ;;
   *)
     usage
   ;;
