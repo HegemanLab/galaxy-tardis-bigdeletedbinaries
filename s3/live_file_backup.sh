@@ -11,16 +11,11 @@ while [ -h "${SOURCE}" ]; do # resolve ${SOURCE} until the file is no longer a s
 done
 DIR="$( cd -P "$( dirname "${SOURCE}" )" >/dev/null 2>&1 && pwd )"
 
-# set EXPORT_ROOT and CONFIG_BUCKET
+# set EXPORT_ROOT and FILE_BUCKET
 source ${DIR}/dest.config
 
-if [ $# = 1 -a -e $1 ]; then 
-  if [[ "${1:0:1}" = "/" ]]; then
-    ABSOLUTE=$1
-  else
-    ABSOLUTE=$( cd $(dirname $1) && pwd -P)/$(basename $1)
-  fi
-  s3cmd -c ${DIR}/dest.s3cfg sync ${ABSOLUTE} s3://${CONFIG_BUCKET}${ABSOLUTE}
-else
-  echo usage: bucket_backup.sh path_to_a_file
-fi
+pushd ${EXPORT_ROOT}/galaxy-central/database/files
+for f in `find . -type d -print | sed -e 's/..//; /^tmp/ d; 1 d'` ; do 
+  echo Syncing files directory $f
+  s3cmd -c ${DIR}/dest.s3cfg sync $f/ s3://${FILE_BUCKET}/$f/
+done
