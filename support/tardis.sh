@@ -5,9 +5,10 @@
 usage() {
   echo "tardis - Temporal Archive Remote Distribution and Installation System"
   echo "usage:"
-  echo "  rootless bash $0 backup"
-  echo "  rootless bash $0 transmit"
-  echo "  rootless bash $0 restore"
+  echo "  tardis backup"
+  echo "  tardis transmit"
+  echo "  tardis restore"
+  echo "  tardis bash, if applicable"
 }
 if [ $# -lt 1 ]; then
   usage
