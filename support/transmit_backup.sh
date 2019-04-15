@@ -45,7 +45,7 @@ $EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/integrated_tool_pan
 $EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/tools.yaml
 $EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/shed_tools/
 
-echo `date --iso-8601=seconds` Backup finishing
+echo `date -I'seconds'` Backup finishing
 echo ...
 
 BACKUP_LOG=$EXPORT_ROOT/var/log/run_backup.log

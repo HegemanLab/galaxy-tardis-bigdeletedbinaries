@@ -2,7 +2,7 @@
 set -e
 set -x # verbose
 echo ---
-echo `date --iso-8601=seconds` Backup starting
+echo `date -I'seconds'` Backup starting
 
 # dump the galaxy exported configuration xml files
 /export/support/config_xml_dump.sh
@@ -29,7 +29,7 @@ printenv | sort | grep GALAXY_CONFIG_ > /export/backup/galaxy_config_env.txt
 /export/s3/bucket_backup.sh /export/galaxy-central/tools.yaml
 /export/s3/bucket_backup.sh /export/shed_tools/
 
-echo `date --iso-8601=seconds` Backup finishing
+echo `date -I'seconds'` Backup finishing
 echo ...
 
 /export/s3/bucket_backup.sh /export/var/log/run_backup.log
