@@ -12,3 +12,13 @@ sudo ssh galaxy rootless bash /datapool/galaxy/home/piquint/export/tardis.sh tra
 ```
 
 In the long run I hope to make this more generalized.  Right now this exists to help me maintain our production Galaxy instance.
+
+# How to use ths repository more generally
+
+- [ ] Copy `s3/dest.config.example` and `s3/dest.s3cfg.example` to `s3/dest.config` and `s3/dest.s3cfg` and adjust
+  - `access_key`
+  - `secret_key`
+  - `FILE_BUCKET`
+  - `CONFIG_BUCKET`
+  - `EXPORT_ROOT`
+- [ ] From the directory containing this README.md file, `docker build -t tardis .`
