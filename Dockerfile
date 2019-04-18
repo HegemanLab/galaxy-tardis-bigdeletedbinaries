@@ -10,7 +10,6 @@ RUN apk add --no-cache py-pip && pip install s3cmd
 #RUN curl https://get.docker.com/ | sh
 # copy docker binary from https://github.com/rootless-containers/usernetes/releases/tag/v20190212.0
 COPY docker /usr/local/bin/docker
-COPY s3/dest.s3cfg /opt/s3/dest.s3cfg
 COPY s3/live_file_backup.sh /opt/s3/live_file_backup.sh
 COPY s3/bucket_backup.sh /opt/s3/bucket_backup.sh
 COPY s3/dest.config /opt/s3/dest.config
