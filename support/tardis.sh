@@ -24,6 +24,13 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
+# if [ ! -e /export/support ]; then
+#   ln -s /opt/support /export/support
+# fi
+# if [ ! -e /export/s3 ]; then
+#   ln -s /opt/s3 /export/s3
+# fi
+
 subcommand=$1
 shift # Remove first argument from the argument list
 
@@ -32,9 +39,11 @@ case "$subcommand" in
     echo ---
     echo `date -I'seconds'` Backup starting
     echo "Collecting Galaxy configuration"
-    docker exec galaxy-init bash -c "ln -s /export/support/cvs /usr/local/bin/cvs; /export/support/config_xml_dump.sh; rm /usr/local/bin/cvs"
+    docker cp /opt/support galaxy-init:/export/support
+    docker exec galaxy-init bash -c "ls -l /export/support; rm /usr/local/bin/cvs; /export/support/config_xml_dump.sh; rm /usr/local/bin/cvs"
     echo "Collecting Galaxy database records"
-    docker exec galaxy-postgres /export/support/db_dump.sh
+    docker cp /opt/support galaxy-postgres:/export/support
+    docker exec galaxy-postgres bash -c "ls -l /export/support; rm /usr/local/bin/cvs; /export/support/db_dump.sh; rm /usr/local/bin/cvs"
     echo `date -I'seconds'` Backup ended
     echo ...
   ;;

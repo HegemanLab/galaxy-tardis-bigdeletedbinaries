@@ -13,7 +13,9 @@ sudo ssh galaxy rootless bash /datapool/galaxy/home/piquint/export/tardis.sh tra
 
 In the long run I hope to make this more generalized.  Right now this exists to help me maintain our production Galaxy instance.
 
-# How to use ths repository more generally
+# How to use ths repository more generally - use docker
+
+## build
 
 - [ ] Copy or symlink `s3/dest.config.example` and `s3/dest.s3cfg.example` to `s3/dest.config` and `s3/dest.s3cfg` and adjust
   - `access_key`
@@ -26,3 +28,20 @@ In the long run I hope to make this more generalized.  Right now this exists to 
   - The `tar` command was added per [https://github.com/moby/moby/issues/18789#issuecomment-165985865](https://github.com/moby/moby/issues/18789#issuecomment-165985865) to dereference logical links when instantiating the build environment.
   - It says in `man docker-build` that, when a URL to a tarball is supplied, `docker build` will use that tarball as the build context rather than the current directory.
   - Apparently, this works when the standard input is a tarball as well, although the man page does not say so explicitly.  Hopefully this capability won't vanish in the future.
+
+## run
+
+The TARDIS needs to use docker to run commands in the other containers.  Therefore, you will need to forward the dockerd socket into the container, as shown below.
+
+It is likely you will include this in a composition.  If you don't, you will invoke it as:
+```
+# using rootless dockerd on usernetes
+TARDIS="docker run --rm -ti -v ${XDG_RUNTIME_DIR}/docker.sock:/var/run/docker.sock -v /path/to/export:/export --name tardis tardis"
+# running dockerd as root
+TARDIS="sudo docker run --rm -ti -v /var/run/docker.sock:/var/run/docker.sock -v /path/to/export:/export --name tardis tardis"
+# Collect configuration data from the running instance.
+$TARDIS backup
+# Transmit the configuration, histories, datasets, and even shed tools to CephS3 storage at MSI.
+$TARDIS export
+```
+If you do use the TARDIS in a composition, use the above as a guide.
