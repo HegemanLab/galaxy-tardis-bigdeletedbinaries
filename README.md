@@ -15,10 +15,14 @@ In the long run I hope to make this more generalized.  Right now this exists to 
 
 # How to use ths repository more generally
 
-- [ ] Copy `s3/dest.config.example` and `s3/dest.s3cfg.example` to `s3/dest.config` and `s3/dest.s3cfg` and adjust
+- [ ] Copy or symlink `s3/dest.config.example` and `s3/dest.s3cfg.example` to `s3/dest.config` and `s3/dest.s3cfg` and adjust
   - `access_key`
   - `secret_key`
   - `FILE_BUCKET`
   - `CONFIG_BUCKET`
   - `EXPORT_ROOT`
-- [ ] From the directory containing this README.md file, `docker build -t tardis .`
+- [ ] *If you didn't use symlinks,* then run `docker build -t .` from the directory containing this README.md file.
+- [ ] *If you used symlinks,* then run `tar ch . | docker build -t tardis -` from the directory containing this README.md file.
+  - The `tar` command was added per [https://github.com/moby/moby/issues/18789#issuecomment-165985865](https://github.com/moby/moby/issues/18789#issuecomment-165985865) to dereference logical links when instantiating the build environment.
+  - It says in `man docker-build` that, when a URL to a tarball is supplied, `docker build` will use that tarball as the build context rather than the current directory.
+  - Apparently, this works when the standard input is a tarball as well, although the man page does not say so explicitly.  Hopefully this capability won't vanish in the future.
