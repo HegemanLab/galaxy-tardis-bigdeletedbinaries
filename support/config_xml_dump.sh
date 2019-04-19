@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 export CVS=/export/support/cvs
-ls -l /export
 
 # ensure that path /export/backup/config exists and is owned by galaxy
 if [ ! -d /export/backup/config ]; then
@@ -22,13 +21,16 @@ if [ ! -d config ]; then su -l -c '
 # initialize sandbox if necessary
 if [ ! -d /export/galaxy-central/config/CVS ]; then su -l -c "
   cd /export/galaxy-central/config
-  $CVS -d /export/backup/config co -d . config
+  $CVS -d /export/backup/config co -d . config > /dev/null
 " galaxy; fi
 
-# add files
+# add files - Note the blend of single and double quotes for deferred
+#             and immediate variable substitution, respectively
 su -l -c "
   cd /export/galaxy-central/config
-  $CVS add *.xml
-  $CVS add *.yml
+  for f in *.xml *.yml; do
+    "'( grep "[/]$f[/]" CVS/Entries > /dev/null )'" || $CVS "'add $f'"
+  done
   $CVS commit -m 'commit of config files for backup - $(date)'
+  $CVS update
 " galaxy
