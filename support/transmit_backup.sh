@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e # abort on error
-#set -x # verbose
+set -x # verbose
 
 # NOTE WELL - This script ASSUMES that it is located in export/support and that export/backup exists.
+EXPORT_ROOT='/export'
 
 # set the actual script directory per https://stackoverflow.com/a/246128
 SOURCE="${BASH_SOURCE[0]}"
@@ -13,42 +14,29 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 cd $DIR/..
-EXPORT_ROOT=`pwd`
+OPT_ROOT=`pwd`
 # now we should be in the export directory
 
-# # record a copy of configuration settings passed through environment variables
-# ENV_BACKUP=$EXPORT_ROOT/backup/galaxy_env.txt
-# if [ -f $ENV_BACKUP ]; then
-#   rm $ENV_BACKUP
-# fi
-# RUN_LIST=$(docker-compose ps | grep '^[a-zA-Z]' | cut -f 1 -d ' ')
-# for a in $RUN_LIST; do
-#   echo '---' >> $ENV_BACKUP
-#   echo "# environment variables for service $a" >> $ENV_BACKUP
-#   docker exec $a bash -c "printenv" | sort >> $ENV_BACKUP
-#   echo '...' >> $ENV_BACKUP
-# done
-
 # save the files used to copy data and config to the bucket (outside of Galaxy)
-$EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/s3/
-$EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/backup/
-$EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/support/
+$OPT_ROOT/s3/bucket_backup.sh $OPT/s3/
+$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/backup/
+$OPT_ROOT/s3/bucket_backup.sh $OPT/support/
 
 # save Galaxy config files necessary to restore the UI
-$EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/config/object_store_conf.xml
-$EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/config/shed_tool_conf.xml
-$EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/config/tool_conf.xml
-$EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/integrated_tool_panel.xml
+$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/config/object_store_conf.xml
+$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/config/shed_tool_conf.xml
+$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/config/tool_conf.xml
+$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/integrated_tool_panel.xml
 
 
 # save the tools and shed_tools
-$EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/tools.yaml
-$EXPORT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/shed_tools/
+$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/tools.yaml
+$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/shed_tools/
 
 echo `date -I'seconds'` Backup finishing
 echo ...
 
 BACKUP_LOG=$EXPORT_ROOT/var/log/run_backup.log
 if [ -f $BACKUP_LOG ]; then
-  $EXPORT_ROOT/s3/bucket_backup.sh $BACKUP_LOG
+  $OPT_ROOT/s3/bucket_backup.sh $BACKUP_LOG
 fi
