@@ -39,11 +39,11 @@ case "$subcommand" in
     echo ---
     echo `date -I'seconds'` Backup starting
     echo "Collecting Galaxy configuration"
-    docker cp /opt/support galaxy-init:/export/support
-    docker exec galaxy-init bash -c "ls -l /export/support; rm /usr/local/bin/cvs; /export/support/config_xml_dump.sh; rm /usr/local/bin/cvs"
+    docker cp /opt/support/ galaxy-init:/export/
+    docker exec galaxy-init bash -c "/export/support/config_xml_dump.sh"
     echo "Collecting Galaxy database records"
-    docker cp /opt/support galaxy-postgres:/export/support
-    docker exec galaxy-postgres bash -c "ls -l /export/support; rm /usr/local/bin/cvs; /export/support/db_dump.sh; rm /usr/local/bin/cvs"
+    docker cp /opt/support/ galaxy-postgres:/export/
+    docker exec galaxy-postgres bash -c "/export/support/db_dump.sh"
     echo `date -I'seconds'` Backup ended
     echo ...
   ;;

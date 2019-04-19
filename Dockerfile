@@ -24,4 +24,4 @@ COPY init /opt/init
 RUN chmod +x /opt/init
 RUN ln -s /opt/init /usr/local/bin/tardis
 ENTRYPOINT ["/opt/init"]
-COPY Dockerfile /Dockerfile
+COPY Dockerfile /opt/support/Dockerfile

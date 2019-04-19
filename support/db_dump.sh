@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 CVS=/export/support/cvs
-ls -l /export
 
 # set path to main postgresql database only when it is not already set
 PGDATA=${PGDATA:-/var/lib/postgresql/data}
@@ -17,9 +16,8 @@ if [ ! -d CVSROOT ]; then su -l -c "$CVS -d /export/backup/pg init" postgres; fi
 if [ ! -d dumpall ]; then su -l -c 'mkdir /export/backup/pg/dumpall' postgres; fi
 
 # abort if database files do not exist
-if [ ! -f $PGDATA/postgresql.conf ]; then
-  echo $PGDATA contains
-  ls $PGDATA
+if [ ! -f $PGDATA/PG_VERSION ]; then
+  ls -l $PGDATA
   exit 0
 fi
 
@@ -40,11 +38,11 @@ if [ ! -f $PGDATA/pg_dumpall.sql ]; then
 else
   su -l -c "
     cd $PGDATA
+    $CVS update
     set -e
     # this statement will fail and abort the script postgresql is not connectable
     psql -c 'select 1' | cat
     pg_dumpall > pg_dumpall.sql
-    $CVS update
     $CVS commit -m 'update of database files for backup - $(date)'
   " postgres
 fi
