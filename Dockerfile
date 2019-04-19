@@ -14,6 +14,7 @@ COPY s3/live_file_backup.sh /opt/s3/live_file_backup.sh
 COPY s3/bucket_backup.sh /opt/s3/bucket_backup.sh
 COPY s3/dest.config /opt/s3/dest.config
 COPY s3/dest.s3cfg /opt/s3/dest.s3cfg
+COPY support/transmit_backup.sh /opt/support/transmit_backup.sh
 COPY support/cvs /opt/support/cvs
 COPY support/config_xml_dump.sh /opt/support/config_xml_dump.sh
 COPY support/db_dump.sh /opt/support/db_dump.sh

@@ -51,6 +51,7 @@ case "$subcommand" in
     echo ---
     echo `date -I'seconds'` Transmit starting
     bash $DIR/transmit_backup.sh
+    bash $DIR/../s3/live_file_backup.sh
     echo `date -I'seconds'` Transmit ended
     echo ...
   ;;
