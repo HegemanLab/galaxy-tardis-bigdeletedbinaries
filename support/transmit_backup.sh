@@ -18,16 +18,14 @@ OPT_ROOT=`pwd`
 # now we should be in the export directory
 
 # save the files used to copy data and config to the bucket (outside of Galaxy)
-$OPT_ROOT/s3/bucket_backup.sh $OPT/s3/
+$OPT_ROOT/s3/bucket_backup.sh $OPT_ROOT/s3/
 $OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/backup/
-$OPT_ROOT/s3/bucket_backup.sh $OPT/support/
+$OPT_ROOT/s3/bucket_backup.sh $OPT_ROOT/support/
 
 # save Galaxy config files necessary to restore the UI
-$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/config/object_store_conf.xml
-$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/config/shed_tool_conf.xml
-$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/config/tool_conf.xml
-$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/integrated_tool_panel.xml
-
+for f in $EXPORT_ROOT/galaxy-central/config/*.[xy]ml; do 
+  $OPT_ROOT/s3/bucket_backup.sh $f
+done
 
 # save the tools and shed_tools
 $OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/tools.yaml
