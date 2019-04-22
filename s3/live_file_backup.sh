@@ -17,5 +17,5 @@ source ${DIR}/dest.config
 pushd ${EXPORT_ROOT}/galaxy-central/database/files
 for f in `find . -type d -print | sed -e 's/..//; /^tmp/ d; 1 d'` ; do 
   echo Syncing files directory $f
-  s3cmd -c ${DIR}/dest.s3cfg sync $f/ s3://${FILE_BUCKET}/$f/
+  s3cmd --no-mime-magic -c ${DIR}/dest.s3cfg sync $f/ s3://${FILE_BUCKET}/$f/
 done
