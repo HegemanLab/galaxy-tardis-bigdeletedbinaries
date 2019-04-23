@@ -18,28 +18,30 @@ OPT_ROOT=`pwd`
 # now we should be in the export directory
 
 echo ---
-echo `date -I'seconds'` Backup starting
+echo `date -I'seconds'` Retrieval starting
 
 # save the files used to copy data and config to the bucket (outside of Galaxy)
-$OPT_ROOT/s3/bucket_backup.sh $OPT_ROOT/s3/
-$OPT_ROOT/s3/bucket_backup.sh $OPT_ROOT/support/
-$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/backup/
-SUFFIX=$( date -Idate -r $EXPORT_ROOT/backup/pg/dumpall/pg_dumpall.sql,v  | sed -e 's/^....-//' )
-$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/backup/pg/dumpall/pg_dumpall.sql,v $SUFFIX
+# $OPT_ROOT/s3/bucket_retrieve.sh $OPT_ROOT/s3/
+# $OPT_ROOT/s3/bucket_retrieve.sh $OPT_ROOT/support/
+$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/
+# SUFFIX=$( date -Idate -r $EXPORT_ROOT/backup/pg/dumpall/pg_dumpall.sql,v  | sed -e 's/^....-//' )
+# $OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/backup/pg/dumpall/pg_dumpall.sql,v $SUFFIX
 
 # save Galaxy config files necessary to restore the UI
-for f in $EXPORT_ROOT/galaxy-central/config/*.[xy]ml; do 
-  $OPT_ROOT/s3/bucket_backup.sh $f
-done
+# for f in $EXPORT_ROOT/galaxy-central/config/*.[xy]ml; do 
+#   $OPT_ROOT/s3/bucket_backup.sh $f
+# done
+$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/galaxy-central/config/
 
-# save the tools and shed_tools
-$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/tools.yaml
-$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/shed_tools/
 
-echo `date -I'seconds'` Backup finishing
+# # restore the tools and shed_tools
+# $OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/galaxy-central/tools.yaml
+# $OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/shed_tools/
+
+echo `date -I'seconds'` Retrieval finishing
 echo ...
 
-BACKUP_LOG=$EXPORT_ROOT/var/log/run_backup.log
-if [ -f $BACKUP_LOG ]; then
-  $OPT_ROOT/s3/bucket_backup.sh $BACKUP_LOG
-fi
+# BACKUP_LOG=$EXPORT_ROOT/var/log/run_backup.log
+# if [ -f $BACKUP_LOG ]; then
+#   $OPT_ROOT/s3/bucket_backup.sh $BACKUP_LOG
+# fi
