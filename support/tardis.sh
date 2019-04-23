@@ -46,6 +46,7 @@ case "$subcommand" in
     docker exec galaxy-postgres bash -c "/export/support/db_dump.sh"
     echo `date -I'seconds'` Backup ended
     echo ...
+    exit 0
   ;;
   transmit)
     echo ---
@@ -54,19 +55,23 @@ case "$subcommand" in
     bash $DIR/../s3/live_file_backup.sh
     echo `date -I'seconds'` Transmit ended
     echo ...
+    exit 0
   ;;
   restore)
     echo ---
     echo `date -I'seconds'` Restore starting
-    echo "WARNING 'restore' not yet implemented."
+    bash $DIR/retrieve_backup.sh restore || exit 1
     echo `date -I'seconds'` Restore ended
     echo ...
+    exit 0
   ;;
   bash)
     bash
+    exit $?
   ;;
   *)
     usage
+    exit 1
   ;;
 esac
 
