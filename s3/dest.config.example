@@ -1,3 +1,3 @@
-export FILE_BUCKET=msigalaxym-piscesv-test-w
-export CONFIG_BUCKET=msigalaxym-piscesv-test-config
-export EXPORT_ROOT=/export
+FILE_BUCKET=userid-galaxy-file-objects
+CONFIG_BUCKET=userid-galaxy-config
+EXPORT_ROOT=/export
