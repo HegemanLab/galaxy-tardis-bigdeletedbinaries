@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# arg 1, optional - subpath for restoration; default is "restore"
+PREFIX=$1
+
 set -e # abort on error
 set -x # verbose
 
@@ -23,13 +27,13 @@ echo `date -I'seconds'` Retrieval starting
 # save the files used to copy data and config to the bucket (outside of Galaxy)
 # $OPT_ROOT/s3/bucket_retrieve.sh $OPT_ROOT/s3/
 # $OPT_ROOT/s3/bucket_retrieve.sh $OPT_ROOT/support/
-$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/
+$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/ restore
 
 # save Galaxy config files necessary to restore the UI
 # for f in $EXPORT_ROOT/galaxy-central/config/*.[xy]ml; do 
 #   $OPT_ROOT/s3/bucket_retrieve.sh $f
 # done
-$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/galaxy-central/config/
+$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/galaxy-central/config/ restore
 
 
 # # restore the tools and shed_tools
