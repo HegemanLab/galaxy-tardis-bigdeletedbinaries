@@ -25,7 +25,7 @@ $OPT_ROOT/s3/bucket_backup.sh $OPT_ROOT/s3/
 $OPT_ROOT/s3/bucket_backup.sh $OPT_ROOT/support/
 $OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/backup/
 SUFFIX=$( date -Idate -r $EXPORT_ROOT/backup/pg/dumpall/pg_dumpall.sql,v  | sed -e 's/^....-//' )
-$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/backup/pg/dumpall/pg_dumpall.sql,v $SUFFIX
+$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/backup/pg/dumpall/pg_dumpall.sql,v oneyear $SUFFIX
 
 # save Galaxy config files necessary to restore the UI
 for f in $EXPORT_ROOT/galaxy-central/config/*.[xy]ml; do 
