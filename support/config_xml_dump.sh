@@ -9,16 +9,19 @@ if [ ! -d /export/backup/config ]; then
 fi
 
 # init CVS repository at /export/backup/config, owned by galaxy
-cd /export/backup/config
+if [ ! -d /export/backup/config ]; then
+  mkdir -p /export/backup/config
+fi
 if [ ! -d CVSROOT ]; then su -l -c "
   $CVS -d /export/backup/config init
 " galaxy; fi
 
+# create a `config` module
 if [ ! -d config ]; then su -l -c '
   mkdir /export/backup/config/config
 ' galaxy; fi
 
-# initialize sandbox if necessary
+# initialize `config` sandbox if necessary
 if [ ! -d /export/galaxy-central/config/CVS ]; then su -l -c "
   cd /export/galaxy-central/config
   $CVS -d /export/backup/config co -d . config > /dev/null
@@ -26,6 +29,7 @@ if [ ! -d /export/galaxy-central/config/CVS ]; then su -l -c "
 
 # add files - Note the blend of single and double quotes for deferred
 #             and immediate variable substitution, respectively
+# commit files and show results
 su -l -c "
   cd /export/galaxy-central/config
   for f in *.xml *.yml; do

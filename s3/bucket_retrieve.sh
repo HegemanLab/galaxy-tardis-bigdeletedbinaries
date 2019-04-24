@@ -25,14 +25,14 @@ if [ $# -le 2 -a -e $1 ]; then
   else
     ABSOLUTE=$( cd $(dirname $1) && pwd -P)/$(basename $1)
   fi
-  INFIX="restore"
+  INFIX="/restore"
   if [ ! -z "$2" ]; then
-    INFIX="$2"
+    INFIX="/$2"
   fi
   if [ ! -d ${EXPORT_ROOT}/${INFIX} ]; then
     mkdir -p ${EXPORT_ROOT}/${INFIX}
   fi
-  s3cmd --no-mime-magic -c ${DIR}/dest.s3cfg sync s3://${CONFIG_BUCKET}${ABSOLUTE} ${EXPORT_ROOT}/${INFIX}${ABSOLUTE}
+  s3cmd --no-mime-magic -c ${DIR}/dest.s3cfg sync s3://${CONFIG_BUCKET}${ABSOLUTE} ${EXPORT_ROOT}${INFIX}${ABSOLUTE}
 else
-  echo "usage: bucket_backup.sh path_to_a_file [subdir of ${EXPORT_ROOT}, default is 'restore']"
+  echo "usage: $0 path_to_a_file [subdir of ${EXPORT_ROOT}, default is 'restore']"
 fi
