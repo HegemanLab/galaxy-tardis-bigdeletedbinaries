@@ -1,10 +1,11 @@
 FROM alpine:3.9.3
 MAINTAINER Art Eschenlauer, esch0041@umn.edu
-RUN apk add bash cvs curl fossil
+RUN apk add bash curl fossil
 RUN apk add --no-cache py-pip && pip install s3cmd
-RUN mkdir -p /opt/support && cp /usr/bin/cvs /opt/support/cvs
 # copy docker binary from https://github.com/rootless-containers/usernetes/releases/tag/v20190212.0
 COPY docker                                  /usr/local/bin/docker
+COPY support/cvs                             /opt/support/cvs
+RUN  ln                     /opt/support/cvs /usr/local/bin/cvs
 COPY s3/live_file_backup.sh                  /opt/s3/live_file_backup.sh
 COPY s3/bucket_backup.sh                     /opt/s3/bucket_backup.sh
 COPY s3/bucket_retrieve.sh                   /opt/s3/bucket_retrieve.sh
