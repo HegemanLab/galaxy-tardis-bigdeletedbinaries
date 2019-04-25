@@ -1,3 +1,8 @@
-FILE_BUCKET=userid-galaxy-file-objects
-CONFIG_BUCKET=userid-galaxy-config
+# S3 bucket to hold files (i.e., Galaxy datasets)
+#    If the Galaxy instance is using an S3 or Swift object store, this
+#    should be the name of the same bucket as is used for the object store.
+FILE_BUCKET=user-instance-galaxy-object-store-bucket
+# S3 bucket used to back up Galaxy configuration
+CONFIG_BUCKET=user-instance-galaxy-config-backup-bucket
+# Mountpoint *within* container for bind-mounted persistence directory
 EXPORT_ROOT=/export

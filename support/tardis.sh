@@ -47,7 +47,7 @@ case "$subcommand" in
     echo `date -I'seconds'` Backup ended
     echo ...
     exit 0
-  ;;
+    ;;
   transmit)
     echo ---
     echo `date -I'seconds'` Transmit starting
@@ -56,23 +56,25 @@ case "$subcommand" in
     echo `date -I'seconds'` Transmit ended
     echo ...
     exit 0
-  ;;
+    ;;
   restore)
+    ;& # fall through to the next list
+  retrieve)
     echo ---
     echo `date -I'seconds'` Restore starting
     bash $DIR/retrieve_backup.sh restore || exit 1
     echo `date -I'seconds'` Restore ended
     echo ...
     exit 0
-  ;;
+    ;;
   bash)
     bash
     exit $?
-  ;;
+    ;;
   *)
     usage
     exit 1
-  ;;
+    ;;
 esac
 
 

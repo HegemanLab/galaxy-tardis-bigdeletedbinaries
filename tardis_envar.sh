@@ -24,15 +24,20 @@ if [ -z "${TAG_POSTGRES:?}" ]; then
  echo "Please set TAG_POSTGRES (a valid tag for an image of quay.io/bgruening/galaxy-postgres) before sourcing ${SOURCE}"
 fi
 
-TARDIS="docker run --rm -ti \
-  -v $XDG_RUNTIME_DIR/docker.sock:/var/run/docker.sock \
-  -v $DIR/s3/dest.s3cfg:/opt/s3/dest.s3cfg \
-  -v $DIR/s3/dest.config:/opt/s3/dest.config \
-  -v $EXPORT_DIR:/export \
-  -e EXPORT_DIR=/export \
-  -v $PGDATA_PARENT:/pgparent \
-  -e PGDATA_PARENT=/pgparent \
-  -e TAG_POSTGRES=$TAG_POSTGRES \
-  --name tardis tardis"
-
-echo "TARDIS=$TARDIS"
+if [ ! -f $DIR/s3/dest.s3cfg ]; then
+  echo "$0 ERROR: $DIR/s3/dest.s3cfg does not exist or is not a file"
+elif [ ! -f $DIR/s3/dest.config ]; then
+  echo "$0 ERROR: $DIR/s3/dest.config does not exist or is not a file"
+else
+  TARDIS="docker run --rm -ti \
+    -v ${XDG_RUNTIME_DIR:?}/docker.sock:/var/run/docker.sock \
+    -v $DIR/s3/dest.s3cfg:/opt/s3/dest.s3cfg \
+    -v $DIR/s3/dest.config:/opt/s3/dest.config \
+    -v ${EXPORT_DIR:?}:/export \
+    -e EXPORT_DIR=/export \
+    -v ${PGDATA_PARENT:?}:/pgparent \
+    -e PGDATA_PARENT=/pgparent \
+    -e TAG_POSTGRES=${TAG_POSTGRES:?} \
+    --name tardis tardis"
+  echo "TARDIS=$TARDIS"
+fi
