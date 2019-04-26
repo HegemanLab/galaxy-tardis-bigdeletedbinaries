@@ -70,7 +70,8 @@ case "$subcommand" in
   restore_files)
     echo ---
     echo `date -I'seconds'` Restore files starting
-    bash $DIR/../s3/live_file_restore.sh || exit 1
+    chown galaxy:galaxy /export/database/files
+    su -c "bash $DIR/../s3/live_file_restore.sh || exit 1" galaxy
     echo `date -I'seconds'` Restore files ended
     echo ...
     exit 0

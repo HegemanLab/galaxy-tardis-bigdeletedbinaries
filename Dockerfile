@@ -22,6 +22,6 @@ RUN chmod +x /opt/init
 RUN ln -s /opt/init /usr/local/bin/tardis
 RUN sed -i -e 's/^postgres:x:[^:]*:[^:]*:/postgres:x:999:999:/' /etc/passwd
 RUN sed -i -e 's/^postgres:x:[^:]*:/postgres:x:999:/'           /etc/group
-RUN adduser -s /sbin/nologin -h /export -D -H -u 1450 -g "Galaxy-file owner" galaxy
+RUN adduser -s /bin/bash -h /export -D -H -u 1450 -g "Galaxy-file owner" galaxy
 ENTRYPOINT ["/opt/init"]
 COPY Dockerfile /opt/support/Dockerfile
