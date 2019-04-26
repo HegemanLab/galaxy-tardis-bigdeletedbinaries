@@ -7,6 +7,7 @@ COPY docker                                  /usr/local/bin/docker
 COPY support/cvs                             /opt/support/cvs
 RUN  ln                     /opt/support/cvs /usr/local/bin/cvs
 COPY s3/live_file_backup.sh                  /opt/s3/live_file_backup.sh
+COPY s3/live_file_restore.sh                 /opt/s3/live_file_restore.sh
 COPY s3/bucket_backup.sh                     /opt/s3/bucket_backup.sh
 COPY s3/bucket_retrieve.sh                   /opt/s3/bucket_retrieve.sh
 COPY support/transmit_backup.sh              /opt/support/transmit_backup.sh

@@ -7,7 +7,9 @@ usage() {
   echo "usage:"
   echo "  tardis backup"
   echo "  tardis transmit"
-  echo "  tardis restore"
+  echo "  tardis retrieve_config"
+  echo "  tardis restore_files"
+  echo "  tardis purge_empty_tmp_dirs"
   echo "  tardis bash, if applicable"
 }
 if [ $# -lt 1 ]; then
@@ -57,13 +59,27 @@ case "$subcommand" in
     echo ...
     exit 0
     ;;
-  restore)
-    ;& # fall through to the next list
-  retrieve)
+  retrieve_config)
     echo ---
-    echo `date -I'seconds'` Restore starting
+    echo `date -I'seconds'` Retrieve config starting
     bash $DIR/retrieve_backup.sh restore || exit 1
-    echo `date -I'seconds'` Restore ended
+    echo `date -I'seconds'` Retrieve config ended
+    echo ...
+    exit 0
+    ;;
+  restore_files)
+    echo ---
+    echo `date -I'seconds'` Restore files starting
+    bash $DIR/../s3/live_file_restore.sh || exit 1
+    echo `date -I'seconds'` Restore files ended
+    echo ...
+    exit 0
+    ;;
+  purge_empty_tmp_dirs)
+    echo ---
+    echo `date -I'seconds'` "Purge empty tmp dirs starting"
+    find /export/galaxy-central/database/files/ -maxdepth 1 -type d -name 'tmp*' -exec rmdir {} \;
+    echo `date -I'seconds'` "Purge empty tmp dirs ended"
     echo ...
     exit 0
     ;;
