@@ -14,6 +14,12 @@ while [ -h "${SOURCE}" ]; do # resolve ${SOURCE} until the file is no longer a s
 done
 DIR="$( cd -P "$( dirname "${SOURCE}" )" >/dev/null 2>&1 && pwd )"
 
+ABSOLUTE=$1
+if [ ! -e ${ABSOLUTE} ]; then
+  echo "Warning: ${ABSOLUTE} not found."
+  exit 0
+fi
+
 # set EXPORT_ROOT and CONFIG_BUCKET
 source ${DIR}/dest.config
 
@@ -34,4 +40,5 @@ if [ $# -le 3 -a -e $1 ]; then
   s3cmd --no-mime-magic -c ${DIR}/dest.s3cfg sync ${ABSOLUTE} s3://${CONFIG_BUCKET}${PREFIX}${ABSOLUTE}${SUFFIX}
 else
   echo 'usage: bucket_backup.sh path_to_a_file [suffix]'
+  echo "   the args supplied were: $@"
 fi

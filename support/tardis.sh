@@ -34,18 +34,28 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 # fi
 
 subcommand=$1
-shift # Remove first argument from the argument list
 
 case "$subcommand" in
   backup)
     echo ---
     echo `date -I'seconds'` Backup starting
     echo "Collecting Galaxy configuration"
-    docker cp /opt/support/ galaxy-init:/export/
-    docker exec galaxy-init bash -c "/export/support/config_xml_dump.sh"
+    if [ ! -d /export/var/log ]; then
+      mkdir -p /export/var/log
+    fi
+    docker cp /opt/support/ galaxy-init:/export/; exit_code="$?"
+    if [ "$exit_code" != 0 ]; then
+      echo "$0 $1 could not copy files - is galaxy-init running?"
+      exit 1
+    fi
+    docker exec galaxy-init bash -c "/export/support/config_xml_dump.sh" | tee -a /export/var/log/run_backup.log
     echo "Collecting Galaxy database records"
-    docker cp /opt/support/ galaxy-postgres:/export/
-    docker exec galaxy-postgres bash -c "/export/support/db_dump.sh"
+    docker cp /opt/support/ galaxy-postgres:/export/; exit_code="$?"
+    if [ "$exit_code" != 0 ]; then
+      echo "$0 $1 could not copy files - is galaxy-postgres running?"
+      exit 1
+    fi
+    docker exec galaxy-postgres bash -c "/export/support/db_dump.sh" | tee -a /export/var/log/run_backup.log
     echo `date -I'seconds'` Backup ended
     echo ...
     exit 0
@@ -53,8 +63,23 @@ case "$subcommand" in
   transmit)
     echo ---
     echo `date -I'seconds'` Transmit starting
-    bash $DIR/transmit_backup.sh
-    bash $DIR/../s3/live_file_backup.sh
+    if [ ! -d /export/var/log ]; then
+      mkdir -p /export/var/log
+    fi
+    ( bash $DIR/transmit_backup.sh; 
+      exit_code="$?";
+      if [ "$exit_code" != 0 ]; then
+        echo "$0 $1 could transmit files while running transmit_backup.sh"
+        exit 1
+      fi
+    ) | tee -a /export/var/log/run_backup.log
+    ( bash $DIR/../s3/live_file_backup.sh; 
+      exit_code="$?";
+      if [ "$exit_code" != 0 ]; then
+        echo "$0 $1 could transmit files while running transmit_backup.sh"
+        exit 1
+      fi
+    ) | tee -a /export/var/log/run_backup.log
     echo `date -I'seconds'` Transmit ended
     echo ...
     exit 0
