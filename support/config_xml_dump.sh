@@ -12,12 +12,12 @@ fi
 if [ ! -d /export/backup/config ]; then
   mkdir -p /export/backup/config
 fi
-if [ ! -d CVSROOT ]; then su -l -c "
+if [ ! -d /export/backup/config/CVSROOT ]; then su -l -c "
   $CVS -d /export/backup/config init
 " galaxy; fi
 
 # create a `config` module
-if [ ! -d config ]; then su -l -c '
+if [ ! -d /export/backup/config/config ]; then su -l -c '
   mkdir /export/backup/config/config
 ' galaxy; fi
 
