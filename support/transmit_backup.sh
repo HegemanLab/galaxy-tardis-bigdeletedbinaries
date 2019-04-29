@@ -36,6 +36,10 @@ done
 $OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/tools.yaml
 $OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/shed_tools/
 
+# save the static web site content
+$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/welcome/
+
+
 echo `date -I'seconds'` Backup finishing
 echo ...
 
