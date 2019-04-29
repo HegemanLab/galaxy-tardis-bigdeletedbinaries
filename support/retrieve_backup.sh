@@ -24,16 +24,14 @@ OPT_ROOT=`pwd`
 echo ---
 echo `date -I'seconds'` Retrieval starting
 
-# save the files used to copy data and config to the bucket (outside of Galaxy)
-# $OPT_ROOT/s3/bucket_retrieve.sh $OPT_ROOT/s3/
-# $OPT_ROOT/s3/bucket_retrieve.sh $OPT_ROOT/support/
+# retrieve the CVS repositories
 $OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/ restore
 
 # save Galaxy config files necessary to restore the UI
-# for f in $EXPORT_ROOT/galaxy-central/config/*.[xy]ml; do 
-#   $OPT_ROOT/s3/bucket_retrieve.sh $f
-# done
 $OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/galaxy-central/config/ restore
+
+# save files necessary to run the installed shed tools
+$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/shed_tools/
 
 
 # # restore the tools and shed_tools
