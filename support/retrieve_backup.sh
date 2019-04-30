@@ -26,6 +26,8 @@ echo `date -I'seconds'` Retrieval starting
 
 # retrieve the CVS repositories
 $OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/ restore
+chown -R galaxy:galaxy $EXPORT_ROOT/restore/export/backup/config
+chown -R postgres $EXPORT_ROOT/restore/export/backup/pg
 
 # save Galaxy config files necessary to restore the UI
 $OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/galaxy-central/config/ restore
@@ -33,15 +35,5 @@ $OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/galaxy-central/config/ restore
 # save files necessary to run the installed shed tools
 $OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/shed_tools/
 
-
-# # restore the tools and shed_tools
-# $OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/galaxy-central/tools.yaml
-# $OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/shed_tools/
-
 echo `date -I'seconds'` Retrieval finishing
 echo ...
-
-# BACKUP_LOG=$EXPORT_ROOT/var/log/run_backup.log
-# if [ -f $BACKUP_LOG ]; then
-#   $OPT_ROOT/s3/bucket_backup.sh $BACKUP_LOG
-# fi
