@@ -33,7 +33,7 @@ chown -R postgres $EXPORT_ROOT/restore/export/backup/pg
 $OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/galaxy-central/config/ restore
 
 # save files necessary to run the installed shed tools
-$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/shed_tools/
+$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/shed_tools/ ..
 
 echo `date -I'seconds'` Retrieval finishing
 echo ...
