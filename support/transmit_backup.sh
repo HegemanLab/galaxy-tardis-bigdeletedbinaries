@@ -31,6 +31,7 @@ fi
 for f in $EXPORT_ROOT/galaxy-central/config/*.[xy]ml; do 
   $OPT_ROOT/s3/bucket_backup.sh $f
 done
+$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/integrated_tool_panel.xml
 
 # save the tools and shed_tools
 $OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/galaxy-central/tools.yaml
