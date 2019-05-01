@@ -5,8 +5,8 @@ RUN apk add --no-cache py-pip && pip install s3cmd
 # copy docker binary from https://github.com/rootless-containers/usernetes/releases/tag/v20190212.0
 COPY docker                                  /usr/local/bin/docker
 COPY support/cvs                             /opt/support/cvs
-COPY support/cvs-musl                        /opt/support/cvs-musl
-RUN  ln                /opt/support/cvs-musl /usr/local/bin/cvs
+COPY support/cvs-static                      /opt/support/cvs-static
+RUN  ln              /opt/support/cvs-static /usr/local/bin/cvs
 COPY s3/live_file_backup.sh                  /opt/s3/live_file_backup.sh
 COPY s3/live_file_restore.sh                 /opt/s3/live_file_restore.sh
 COPY s3/bucket_backup.sh                     /opt/s3/bucket_backup.sh
