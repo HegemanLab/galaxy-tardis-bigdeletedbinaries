@@ -3,15 +3,26 @@ set -e
 export CVS=/export/support/cvs
 
 # ensure that path /export/backup/config exists and is owned by galaxy
+if [ ! -d /export/backup ]; then
+  if [ -d /export/restore/export/backup ]; then
+    mv /export/restore/export/backup /export/backup
+  else
+    mkdir -p /export/backup
+    chown galaxy:galaxy /export/backup
+  fi
+fi
+
+# ensure that path /export/backup/config exists and is owned by galaxy
 if [ ! -d /export/backup/config ]; then
-  mkdir -p /export/backup/config
-  chown galaxy:galaxy /export/backup/config
+  if [ -d /export/restore/export/backup/config ]; then
+    mv /export/restore/export/backup/config /export/backup/config
+  else
+    mkdir -p /export/backup/config
+    chown galaxy:galaxy /export/backup/config
+  fi
 fi
 
 # init CVS repository at /export/backup/config, owned by galaxy
-if [ ! -d /export/backup/config ]; then
-  mkdir -p /export/backup/config
-fi
 if [ ! -d /export/backup/config/CVSROOT ]; then su -l -c "
   $CVS -d /export/backup/config init
 " galaxy; fi
