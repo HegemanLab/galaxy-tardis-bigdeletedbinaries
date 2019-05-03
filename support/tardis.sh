@@ -9,6 +9,7 @@ usage() {
   echo "  tardis transmit"
   echo "  tardis retrieve_config"
   echo "  tardis restore_files"
+  echo "  tardis seed_database [date, optional]"
   echo "  tardis purge_empty_tmp_dirs"
   echo "  tardis bash, if applicable"
 }
@@ -26,14 +27,8 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
-# if [ ! -e /export/support ]; then
-#   ln -s /opt/support /export/support
-# fi
-# if [ ! -e /export/s3 ]; then
-#   ln -s /opt/s3 /export/s3
-# fi
-
 subcommand=$1
+subarg=$2
 
 case "$subcommand" in
   backup)
@@ -98,6 +93,16 @@ case "$subcommand" in
     chown galaxy:galaxy /export/database/files
     su -c "bash $DIR/../s3/live_file_restore.sh || exit 1" galaxy
     echo `date -I'seconds'` Restore files ended
+    echo ...
+    exit 0
+    ;;
+  seed_database)
+    echo ---
+    echo "`date -I'seconds'` Database-seed starting"
+    echo "Collecting Galaxy configuration"
+    echo "/opt/support/db_seed.sh '${subarg}'"
+    /opt/support/db_seed.sh "${subarg}"
+    echo "`date -I'seconds'` Database-seed ended"
     echo ...
     exit 0
     ;;

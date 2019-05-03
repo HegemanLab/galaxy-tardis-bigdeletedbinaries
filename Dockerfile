@@ -1,5 +1,8 @@
 FROM alpine:3.9.3
 MAINTAINER Art Eschenlauer, esch0041@umn.edu
+# coreutils adds a megabyte to the image size, but it gives me the options for 'date' that I need
+#   busybox is about 0.8 megabyte
+RUN apk add coreutils
 RUN apk add bash curl fossil
 RUN apk add --no-cache py-pip && pip install s3cmd
 # copy docker binary from https://github.com/rootless-containers/usernetes/releases/tag/v20190212.0
@@ -14,11 +17,11 @@ COPY support/transmit_backup.sh              /opt/support/transmit_backup.sh
 COPY support/retrieve_backup.sh              /opt/support/retrieve_backup.sh
 COPY support/config_xml_dump.sh              /opt/support/config_xml_dump.sh
 COPY support/db_dump.sh                      /opt/support/db_dump.sh
+COPY support/db_seed.sh                      /opt/support/db_seed.sh
 COPY support/download_file_bucket.sh         /opt/support/download_file_bucket.sh
-COPY support/run_backup.sh                   /opt/support/run_backup.sh
 COPY support/tardis.sh                       /opt/support/tardis.sh
 COPY init                                    /opt/init
-RUN chmod +x /opt/init
+RUN chmod +x /opt/init /opt/support/*.sh /opt/s3/*.sh
 RUN ln -s /opt/init /usr/local/bin/tardis
 RUN sed -i -e 's/^postgres:x:[^:]*:[^:]*:/postgres:x:999:999:/' /etc/passwd
 RUN sed -i -e 's/^postgres:x:[^:]*:/postgres:x:999:/'           /etc/group
