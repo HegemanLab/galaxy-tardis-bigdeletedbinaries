@@ -45,3 +45,15 @@ $TARDIS backup
 $TARDIS export
 ```
 If you do use the TARDIS in a composition, use the above as a guide.
+
+# CVS
+
+## Why use CVS rather than Git?
+
+CVS (Concurrent Versions System, [https://www.nongnu.org/cvs/](https://www.nongnu.org/cvs/)) stores all revisions of a text file in an extremely compact format.  This project backs up the Galaxy database to a single SQL file.  Multiple revisions of this file take up an much larger space in a Git repository, whereas, in a CVS repository, they take up little more room than a few times the size of the SQL file.  CVS has been replaced for general software development, but it seems to fill a good niche here.  On the other hand, a more compelling question might be "Why use CVS rather than RCS?", since both CVS and RCS use the same storage format - maybe CVS is more familiar and easier to install (CVS has a single binary, compared to nine for RCS).
+
+There may be a modern source control system that could achieve compact storage and a single binary.  Fossil ([https://www.fossil-scm.org/](https://www.fossil-scm.org/)) seems like a possible candidate, but I have not yet worked with it enough to become familiar with its operation and security model.
+
+## Statically linked `cvs` binary
+
+The `support/cvs-static` binary was compiled and statically linked as described at [https://github.com/eschen42/alpine-cbuilder#a-use-case](https://github.com/eschen42/alpine-cbuilder#a-use-case)

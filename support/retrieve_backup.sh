@@ -29,20 +29,17 @@ if [ ! -d $EXPORT_ROOT/restore/$EXPORT_ROOT ]; then
   mkdir -p $EXPORT_ROOT/restore/$EXPORT_ROOT
 fi
 chown galaxy:galaxy $EXPORT_ROOT/restore/$EXPORT_ROOT
-# set up $EXPORT_ROOT/restore/$EXPORT_ROOT/backup if it does not yet exist
-if [ ! -d $EXPORT_ROOT/restore/$EXPORT_ROOT/backup ]; then
-  mkdir $EXPORT_ROOT/restore/$EXPORT_ROOT/backup
+# set up $EXPORT_ROOT/restore/$EXPORT_ROOT/galaxy-central if it does not yet exist
+if [ ! -d $EXPORT_ROOT/restore/$EXPORT_ROOT/galaxy-central ]; then
+  mkdir $EXPORT_ROOT/restore/$EXPORT_ROOT/galaxy-central
 fi
-chown galaxy:galaxy $EXPORT_ROOT/restore/$EXPORT_ROOT/backup
-# set up $EXPORT_ROOT/restore/$EXPORT_ROOT/backup/pg if it does not yet exist
-if [ ! -d /$EXPORT_ROOT/restore/$EXPORT_ROOT/backup/pg ]; then
-  mkdir -p /$EXPORT_ROOT/restore/$EXPORT_ROOT/backup/pg
-fi
-chown postgres /$EXPORT_ROOT/restore/$EXPORT_ROOT/backup/pg
+chown galaxy:galaxy $EXPORT_ROOT/restore/$EXPORT_ROOT/galaxy-central
 
 # retrieve the CVS repositories
+chmod 777 $EXPORT_ROOT/backup
 su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/config/ .." galaxy
-su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/pg/ .." postgres
+su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/pg/     .." postgres
+chmod 755 $EXPORT_ROOT/backup
 
 # save Galaxy config files necessary to restore the UI
 su -c "
