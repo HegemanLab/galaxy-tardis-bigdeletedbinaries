@@ -4,22 +4,14 @@ export CVS=/export/support/cvs
 
 # ensure that path /export/backup/config exists and is owned by galaxy
 if [ ! -d /export/backup ]; then
-  if [ -d /export/restore/export/backup ]; then
-    mv /export/restore/export/backup /export/backup
-  else
-    mkdir -p /export/backup
-    chown galaxy:galaxy /export/backup
-  fi
+  mkdir -p /export/backup
+  chown galaxy:galaxy /export/backup
 fi
 
 # ensure that path /export/backup/config exists and is owned by galaxy
 if [ ! -d /export/backup/config ]; then
-  if [ -d /export/restore/export/backup/config ]; then
-    mv /export/restore/export/backup/config /export/backup/config
-  else
-    mkdir -p /export/backup/config
-    chown galaxy:galaxy /export/backup/config
-  fi
+  mkdir -p /export/backup/config
+  chown galaxy:galaxy /export/backup/config
 fi
 
 # init CVS repository at /export/backup/config, owned by galaxy
