@@ -6,5 +6,5 @@ if [ ! -x /export/support/cvs ]; then
   fi
   cp /opt/support/cvs /export/support/cvs
 fi
-bash tardis.sh $@
+bash tardis.sh "$@"
 

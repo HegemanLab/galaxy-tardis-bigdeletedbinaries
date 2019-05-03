@@ -35,9 +35,13 @@ else
     -v $DIR/s3/dest.config:/opt/s3/dest.config \
     -v ${EXPORT_DIR:?}:/export \
     -e EXPORT_DIR=/export \
+    -e HOST_EXPORT_DIR=${EXPORT_DIR:?} \
     -v ${PGDATA_PARENT:?}:/pgparent \
     -e PGDATA_PARENT=/pgparent \
+    -e HOST_PGDATA_PARENT=${PGDATA_PARENT:?} \
     -e TAG_POSTGRES=${TAG_POSTGRES:?} \
+    -e IMAGE_POSTGRES=${IMAGE_POSTGRES:?} \
+    -e CONTAINER_POSTGRES=${CONTAINER_POSTGRES:?} \
     --name tardis tardis"
   echo "TARDIS=$TARDIS"
 fi
