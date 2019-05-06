@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# arg 1, optional - subpath for restoration; default is "restore"
-PREFIX=$1
-
 set -e # abort on error
 set -x # verbose
 
@@ -35,21 +32,25 @@ if [ ! -d $EXPORT_ROOT/restore/$EXPORT_ROOT/galaxy-central ]; then
 fi
 chown galaxy:galaxy $EXPORT_ROOT/restore/$EXPORT_ROOT/galaxy-central
 
+if [ ! -d $EXPORT_ROOT/backup/config ]; then
+  mkdir -p $EXPORT_ROOT/backup/config
+fi
+chown galaxy:galaxy $EXPORT_ROOT/backup/config
+
+if [ ! -d $EXPORT_ROOT/backup/pg ]; then
+  mkdir $EXPORT_ROOT/backup/pg
+fi
+chown postgres $EXPORT_ROOT/backup/pg
+
 # retrieve the CVS repositories
-chmod 777 $EXPORT_ROOT/backup
-su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/config/ .." galaxy
-su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/pg/     .." postgres
-chmod 755 $EXPORT_ROOT/backup
+su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/config/" galaxy
+su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/pg/"     postgres
 
-# save Galaxy config files necessary to restore the UI
-su -c "
-  $OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/galaxy-central/config/ restore
-  ls -la $EXPORT_ROOT/restore/$EXPORT_ROOT/galaxy-central/config/
-" galaxy
+# retrieve Galaxy config files necessary to restore the UI
+su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/config/ restore" galaxy
 
-
-# save files necessary to run the installed shed tools
-su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/shed_tools/ .." galaxy
+# restore files necessary to run the installed shed tools
+su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/shed_tools/" galaxy
 
 echo `date -I'seconds'` Retrieval finishing
 echo ...

@@ -1,0 +1,232 @@
+#!/bin/bash
+# tardis.sh - Temporal Archive Remote Distribution and Installation System
+
+# set the actual script directory per https://stackoverflow.com/a/246128
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+
+subcommand=$1
+subarg=$2
+
+# read preparatory stuff from this file
+source $DIR/tardis_setup
+
+#  Note well: Execute this from *outside* a container
+usage() {
+  echo '
+tardis - Temporal Archive Remote Distribution and Installation System
+
+Usage:
+  tardis backup                - Back up PostgreSQL database and galaxy-central/config.
+  tardis transmit              - Transmit datasets and backup to Amazon-S3-compatible storage.
+  tardis retrieve_config       - Retrieve database and config backup (but not datasets) from S3.
+  tardis apply_config [date]   - Restore config from backup, whether from S3 or "tardis backup".
+  tardis restore_files         - Retrieve datasets from S3 (not desirable when using object store).
+  tardis seed_database [date]  - Replace PostgreSQL database with copy from backup.
+  tardis purge_empty_tmp_dirs  - Purge empty tmp directories that accumulate with datasets.
+  tardis cron                  - Run dcron NOT as daemon to run backup daily.
+  tardis upgrade_database      - Upgrade the PostgreSQL database to match the Galaxy version.
+  tardis bash                  - Enter a bash shell, if applicable.
+
+Optional environment variables:
+  PGDATA (default "/var/lib/postgresql/data") - path to database in "galaxy-postgres"
+    - Optional, used by "backup" and "seed_database"
+  EXPORT_DIR (default "/export") - path to directory containing "galaxy-central"
+    - Optional, used by most tasks
+
+Required environment Variables (set using the "-e" option of the "docker run")
+  These are the environment variables and the tasks that require them:
+    HOST_EXPORT_DIR - host path to the EXPORT_DIR as bind-mounted in docker
+      - Used by "seed database"
+    HOST_PGDATA_PARENT - host directory whose "main" subdirectory is bind-mounted
+        by the "galaxy-postgres" container to the path specified by PGDATA
+      - Used by "seed database"
+    PGDATA_PARENT - bind-mount within "tardis" for HOST_PGDATA_PARENT
+      - Used by "seed database"
+    IMAGE_POSTGRES - docker image for PostgreSQL, e.g., "quay.io/bgruening/galaxy-postgres"
+      - Used by "seed database"
+    TAG_POSTGRES - tag for docker image for PostgreSQL, e.g., "9.6.5_for_19.01"
+      - Used by "seed database"
+
+Required bind-mounts:
+  "'${EXPORT_DIR}'"
+    - required by all but "bash" and "help"
+  "/var/run/docker.sock"
+    - required by "seed_database", "backup"
+  "/opt/s3/dest.s3cfg" and "/opt/s3/dest.s3cfg"
+    - required by "transmit", "retrieve_config", and "restore_files"
+  '
+}
+if [ $# -lt 1 ]; then
+  echo 'Missing argument(s)'
+  usage
+  exit 0
+fi
+
+# fail if environment variables are missing
+reqenv() {
+  for var in "$@"; do
+    if [ -z "$var" ]; then
+      echo "
+        Not found: ${var}
+        'tardis ${subcommand}' requires that the following environment variables be set:
+        $@
+      "
+      usage
+      exit 1
+    fi
+  done
+}
+
+# fail if mounts are missing
+reqmnt() {
+  for var in "$@"; do
+    if [ ! -e "$var" ]; then
+      echo "
+        Not found: ${var}
+        'tardis ${subcommand}' requires that the following files or sockets be bind-mounted:
+        $@
+      "
+      usage
+      exit 1
+    fi
+  done
+}
+
+case "$subcommand" in
+  backup)
+    echo ---
+    echo `date -I'seconds'` Backup starting
+
+    echo "Collecting Galaxy configuration"
+    if [ ! -d ${EXPORT_DIR}/var/log ]; then
+      mkdir -p ${EXPORT_DIR}/var/log
+    fi
+    docker cp /opt/support/ galaxy-init:${EXPORT_DIR}/; exit_code="$?"
+    if [ "$exit_code" != 0 ]; then
+      echo "$0 $1 could not copy files - is galaxy-init running?"
+      exit 1
+    fi
+    docker exec galaxy-init bash -c "export EXPORT_DIR=${EXPORT_DIR}; ${EXPORT_DIR}/support/config_xml_dump.sh" | tee -a ${EXPORT_DIR}/var/log/run_backup.log
+
+    echo "Collecting Galaxy database records"
+    docker cp /opt/support/ galaxy-postgres:${EXPORT_DIR}/; exit_code="$?"
+    if [ "$exit_code" != 0 ]; then
+      echo "$0 $1 could not copy files - is galaxy-postgres running?"
+      exit 1
+    fi
+    docker exec galaxy-postgres bash -c "export EXPORT_DIR=${EXPORT_DIR}; ${EXPORT_DIR}/support/db_dump.sh" | tee -a ${EXPORT_DIR}/var/log/run_backup.log
+
+    echo `date -I'seconds'` Backup ended
+    echo ...
+    exit 0
+    ;;
+  upgrade_database)
+    reqmnt /var/run/docker.sock ${EXPORT_DIR}
+    echo ---
+    echo `date -I'seconds'` Upgrading database
+    echo "Upgrading PostgreSQL database"
+    if [ ! -d ${EXPORT_DIR}/var/log ]; then
+      mkdir -p ${EXPORT_DIR}/var/log
+    fi
+    docker exec galaxy-web bash -c "/bin/bash ${EXPORT_DIR}/galaxy-central/manage_db.sh upgrade" | tee -a ${EXPORT_DIR}/var/log/run_backup.log
+    echo `date -I'seconds'` Upgrade of database ended
+    echo ...
+    exit 0
+    ;;
+  transmit)
+    echo ---
+    echo `date -I'seconds'` Transmit starting
+    if [ ! -d ${EXPORT_DIR}/var/log ]; then
+      mkdir -p ${EXPORT_DIR}/var/log
+    fi
+    ( bash $DIR/transmit_backup.sh;
+      exit_code="$?";
+      if [ "$exit_code" != 0 ]; then
+        echo "$0 $1 could transmit files while running transmit_backup.sh"
+        exit 1
+      fi
+    ) | tee -a ${EXPORT_DIR}/var/log/run_backup.log
+    ( bash $DIR/../s3/live_file_backup.sh;
+      exit_code="$?";
+      if [ "$exit_code" != 0 ]; then
+        echo "$0 $1 could transmit files while running transmit_backup.sh"
+        exit 1
+      fi
+    ) | tee -a ${EXPORT_DIR}/var/log/run_backup.log
+    echo `date -I'seconds'` Transmit ended
+    echo ...
+    exit 0
+    ;;
+  retrieve_config)
+    reqmnt ${EXPORT_DIR}
+    echo ---
+    echo `date -I'seconds'` Retrieve config starting
+    bash $DIR/retrieve_backup.sh || exit 1
+    echo `date -I'seconds'` Retrieve config ended
+    echo ...
+    exit 0
+    ;;
+  apply_config)
+    reqmnt ${EXPORT_DIR}
+    cpcvs
+    echo ---
+    echo `date -I'seconds'` Apply config starting
+    echo "/opt/support/config_seed.sh '${subarg}'"
+    /opt/support/config_seed.sh "${subarg}"
+    echo `date -I'seconds'` Apply config ended
+    echo ...
+    rmcvs
+    exit 0
+    ;;
+  restore_files)
+    echo ---
+    echo `date -I'seconds'` Restore files starting
+    chown galaxy:galaxy ${EXPORT_DIR}/database/files
+    su -c "bash $DIR/../s3/live_file_restore.sh || exit 1" galaxy
+    echo `date -I'seconds'` Restore files ended
+    echo ...
+    exit 0
+    ;;
+  seed_database)
+    cpcvs
+    reqenv HOST_EXPORT_DIR HOST_PGDATA_PARENT PGDATA_PARENT IMAGE_POSTGRES TAG_POSTGRES
+    echo ---
+    echo "`date -I'seconds'` Database-seed starting"
+    echo "Collecting Galaxy configuration"
+    echo "/opt/support/db_seed.sh '${subarg}'"
+    /opt/support/db_seed.sh "${subarg}"
+    echo "`date -I'seconds'` Database-seed ended"
+    echo ...
+    rmcvs
+    exit 0
+    ;;
+  purge_empty_tmp_dirs)
+    echo ---
+    echo `date -I'seconds'` "Purge empty tmp dirs starting"
+    find ${EXPORT_DIR}/galaxy-central/database/files/ -maxdepth 1 -type d -name 'tmp*' -exec rmdir {} \;
+    echo `date -I'seconds'` "Purge empty tmp dirs ended"
+    echo ...
+    exit 0
+    ;;
+  bash)
+    bash
+    exit $?
+    ;;
+  help)
+    usage
+    exit 1
+    ;;
+  *)
+    echo "unknown argument: ${subcommand}"
+    usage
+    exit 1
+    ;;
+esac
+
+

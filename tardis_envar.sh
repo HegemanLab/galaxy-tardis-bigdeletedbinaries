@@ -7,7 +7,14 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
-. $DIR/tags-for-tardis_envar-to-source.sh
+source $DIR/tags-for-tardis_envar-to-source.sh
+# e.g.:
+# EXPORT_DIR='/mnt/ace/piscesv/export'
+# INTERNAL_EXPORT_DIR='/export'
+# PGDATA_PARENT='/mnt/ace/piscesv/postgres'
+# IMAGE_POSTGRES='quay.io/bgruening/galaxy-postgres'
+# CONTAINER_POSTGRES='galaxy-postgres'
+# TAG_POSTGRES='9.6.5_for_19.01'
 
 # fail if EXPORT_DIR is not specified; to address this failure, e.g., EXPORT_DIR=/full/path/to/export
 if [ ! -d ${EXPORT_DIR:?} ]; then
@@ -33,8 +40,8 @@ else
     -v ${XDG_RUNTIME_DIR:?}/docker.sock:/var/run/docker.sock \
     -v $DIR/s3/dest.s3cfg:/opt/s3/dest.s3cfg \
     -v $DIR/s3/dest.config:/opt/s3/dest.config \
-    -v ${EXPORT_DIR:?}:/export \
-    -e EXPORT_DIR=/export \
+    -v ${EXPORT_DIR:?}:${INTERNAL_EXPORT_DIR:?} \
+    -e EXPORT_DIR=${INTERNAL_EXPORT_DIR:?} \
     -e HOST_EXPORT_DIR=${EXPORT_DIR:?} \
     -v ${PGDATA_PARENT:?}:/pgparent \
     -e PGDATA_PARENT=/pgparent \

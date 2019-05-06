@@ -4,5 +4,3 @@
 FILE_BUCKET=user-instance-galaxy-object-store-bucket
 # S3 bucket used to back up Galaxy configuration
 CONFIG_BUCKET=user-instance-galaxy-config-backup-bucket
-# Mountpoint *within* container for bind-mounted persistence directory
-EXPORT_ROOT=/export

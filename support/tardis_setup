@@ -1,0 +1,19 @@
+# source this file with bash
+
+# optional environment variale defaults
+export EXPORT_DIR=${EXPORT_DIR:-/export}
+export EXPORT_ROOT=${EXPORT_DIR}
+export PGDATA=${PGDATA:-/var/lib/postgresql/data}
+
+# set up preliminaries expected by tardis
+cpcvs () {
+  if [ ! -x ${EXPORT_ROOT}/support/cvs ]; then
+    if [ ! -d ${EXPORT_ROOT}/support ]; then
+      mkdir -p ${EXPORT_ROOT}/support
+    fi
+    cp /opt/support/cvs ${EXPORT_ROOT}/support/cvs
+  fi
+}
+rmcvs () {
+  rm ${EXPORT_ROOT}/support/cvs
+}
