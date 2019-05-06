@@ -2,4 +2,4 @@
 #
 # "every day at 1 AM run the backup script"
 # minutes hour dayOfMonth month dayOfWeek command
-  00      01   *          *     *         /bin/bash -c '/export/support/run_backup.sh >> /export/var/log/run_backup.log 2>&1'
+  00      01   *          *     *         /bin/bash -c '/opt/support/tardis.sh backup && /opt/support/tardis.sh transmit'

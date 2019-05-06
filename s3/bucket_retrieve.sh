@@ -12,12 +12,13 @@ while [ -h "${SOURCE}" ]; do # resolve ${SOURCE} until the file is no longer a s
 done
 DIR="$( cd -P "$( dirname "${SOURCE}" )" >/dev/null 2>&1 && pwd )"
 
-# set EXPORT_ROOT and CONFIG_BUCKET
+# set CONFIG_BUCKET
 source ${DIR}/dest.config
 # #e.g.:
 # FILE_BUCKET=msigalaxym-piscesv-test-w
 # CONFIG_BUCKET=msigalaxym-piscesv-test-config
-# EXPORT_ROOT=/export
+
+EXPORT_ROOT=${EXPORT_DIR:?} # typically '/export'
 
 my_invoke="$0"
 my_name="$1"
@@ -26,7 +27,7 @@ my_parms="$@"
 
 usage() {
   echo '******************************************************************************'
-  echo "Usage: ${my_invoke} path_to_a_file [subdir of ${EXPORT_ROOT}, default is 'restore']"
+  echo "Usage: ${my_invoke} path_to_a_file [subdir of ${EXPORT_ROOT}, default is '..']"
   echo "This invocation: ${my_invoke} ${my_parms}"
   echo '******************************************************************************'
 }
@@ -56,12 +57,12 @@ if [ $# -le 3 -a -e ${my_name} ]; then
   else
     ABSOLUTE=$( cd $(dirname ${my_name}) && pwd -P)/$(basename ${my_name})
   fi
-  INFIX="/restore"
+  INFIX="/${my_infix:-..}"
   if [ ! -z "${my_infix}" ]; then
     INFIX="/${my_infix}"
   fi
-  if [ ! -d ${EXPORT_ROOT}/${INFIX} ]; then
-    mkdir -p ${EXPORT_ROOT}/${INFIX}
+  if [ ! -d ${EXPORT_ROOT}${INFIX} ]; then
+    mkdir -p ${EXPORT_ROOT}${INFIX}
   fi
   set -x
   s3cmd --no-mime-magic -c ${DIR}/dest.s3cfg sync s3://${CONFIG_BUCKET}${ABSOLUTE} ${EXPORT_ROOT}${INFIX}${ABSOLUTE}

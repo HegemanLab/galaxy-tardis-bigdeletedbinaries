@@ -20,7 +20,7 @@ if [ ! -e ${ABSOLUTE} ]; then
   exit 0
 fi
 
-# set EXPORT_ROOT and CONFIG_BUCKET
+# set CONFIG_BUCKET
 source ${DIR}/dest.config
 
 if [ $# -le 3 -a -e $1 ]; then

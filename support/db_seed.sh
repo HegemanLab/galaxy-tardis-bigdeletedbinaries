@@ -19,17 +19,18 @@ if [ ! -z "${last_postgres}"  ]; then
   my_date=$( echo "${my_date}" | sed 's/T/ /; s/[^-+:0-9]/\\&/g; s/\([0-9]\)\([-+]..:..$\)/\1\\ GMT/' )
   last_postgres="-D ${my_date}"
 fi
+PGDATA=${PGDATA:?} # typically '/var/lib/postgresql/data'
 
 echo "EXPORT_DIR         = ${EXPORT_DIR:?}"
 echo "HOST_EXPORT_DIR    = ${HOST_EXPORT_DIR:?}"
+echo "PGDATA             = ${PGDATA}"
 echo "PGDATA_PARENT      = ${PGDATA_PARENT:?}"
 echo "HOST_PGDATA_PARENT = ${HOST_PGDATA_PARENT:?}"
 echo "TAG_POSTGRES       = ${TAG_POSTGRES:?}"
 echo "IMAGE_POSTGRES     = ${IMAGE_POSTGRES:?}"
-echo "CONTAINER_POSTGRES = ${CONTAINER_POSTGRES:?}"
 echo "last_postgres      = ${last_postgres}"
 
-PG_RUN="-v ${HOST_PGDATA_PARENT}/main/:/var/lib/postgresql/data -v ${HOST_EXPORT_DIR}:/export --rm ${IMAGE_POSTGRES}:${TAG_POSTGRES}"
+PG_RUN="-v ${HOST_PGDATA_PARENT}/main/:${PGDATA} -v ${HOST_EXPORT_DIR}:/export --rm ${IMAGE_POSTGRES}:${TAG_POSTGRES}"
 
 set -x
 set -e
@@ -60,7 +61,7 @@ docker run -u postgres ${PG_RUN} bash -c "
   echo PATH2a=\$PATH
   "'PATH=$PATH'"
   echo PATH2b=\$PATH
-  cd /var/lib/postgresql/data
+  cd ${PGDATA}
   set -e
   ls -lR ${EXPORT_DIR}/dumpall
   ${EXPORT_DIR}/support/cvs -d ${EXPORT_DIR}/backup/pg co -d ${EXPORT_DIR}/dumpall ${last_postgres} dumpall
@@ -92,7 +93,7 @@ fi
 docker run -u postgres ${PG_RUN} bash -c '
   POSTGRES_PASSWORD=$POSTGRES_PASSWORD
   echo PATH2=$PATH
-  initdb -D /var/lib/postgresql/data
+  initdb -D '"${PGDATA}"'
 '
 
 # As postgres:
@@ -102,18 +103,34 @@ docker run -u postgres ${PG_RUN} bash -c "
   echo PATH3a=\$PATH
   "'PATH=$PATH'"
   echo PATH3b=\$PATH
-  cd /var/lib/postgresql/data
+  cd ${PGDATA}
   pg_ctl -D . -l ./logfile start
   set +e
   sleep 5
   echo Restoring PostgreSQL - this may take a while.
-  ( (psql < ${EXPORT_DIR}/dumpall/pg_dumpall.sql 2> ./psql_stderr 1> ./psql_stdout) && cp ${EXPORT_DIR}/dumpall/*.conf /var/lib/postgresql/data ) || {
+  ( (psql < ${EXPORT_DIR}/dumpall/pg_dumpall.sql 2> ./psql_stderr 1> ./psql_stdout) && cp ${EXPORT_DIR}/dumpall/*.conf ${PGDATA} ) || {
     echo PostgreSQL restoration failure
     exit 1
   }
-  ls -l /var/lib/postgresql/data
+  ls -l ${PGDATA}
   touch rollbackSuccess
+  exit 0
 "
+
+# restore the HEAD to dumpall if needed
+if [ ! -z "${last_postgres}"  ]; then
+  # As postgres:
+  #   - check out the latest version of pg_dumpall.sql
+  docker run -u postgres ${PG_RUN} bash -c "
+    echo PATH2a=\$PATH
+    "'PATH=$PATH'"
+    echo PATH2b=\$PATH
+    cd ${PGDATA}
+    set -e
+    ls -lR ${EXPORT_DIR}/dumpall
+    ${EXPORT_DIR}/support/cvs -d ${EXPORT_DIR}/backup/pg co -d ${EXPORT_DIR}/dumpall dumpall
+  "
+fi
 
 test -f $PGDATA_PARENT/main/rollbackSuccess
 if [ $# -eq 0 ]; then
