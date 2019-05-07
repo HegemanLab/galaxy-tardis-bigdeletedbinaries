@@ -37,7 +37,7 @@ set -e
 
 # As root, make sure that:
 #   - the pg      CVS repo  exists with proper permissions
-#   - the dumpall directory exists with proper permissions
+#   - the dumpall directory is empty with proper permissions
 docker run -u root ${PG_RUN} bash -c "
   echo PATH1a=\$PATH
   "'PATH=$PATH'"
@@ -48,10 +48,10 @@ docker run -u root ${PG_RUN} bash -c "
     exit 1
   fi
   chown -R postgres:postgres ${EXPORT_DIR}/backup/pg
-  if [ ! -d ${EXPORT_DIR}/dumpall ]; then
-    whoami
-    mkdir ${EXPORT_DIR}/dumpall
+  if [ -d ${EXPORT_DIR}/dumpall ]; then
+    rm -rf ${EXPORT_DIR}/dumpall
   fi
+  mkdir ${EXPORT_DIR}/dumpall
   chown -R postgres:postgres ${EXPORT_DIR}/dumpall
 "
 
@@ -80,16 +80,22 @@ grep pg_dumpall.sql ${EXPORT_DIR}/dumpall/CVS/Entries
 OLD_MAIN=""
 test -d $PGDATA_PARENT/main
 if [ $# -ne 0 ]; then
+  # abort when PostgreSQL appears to be running
+  if [ -f $PGDATA_PARENT/main/postmaster.pid ]; then
+    echo "Aborting $0: PostgreSQL database is running."
+    exit 1
+  fi
   # move main to main.datetime for safekeeping
   OLD_MAIN=main.$(date -Iseconds)
   echo now moving $PGDATA_PARENT/main to $PGDATA_PARENT/${OLD_MAIN}
   mv $PGDATA_PARENT/main $PGDATA_PARENT/${OLD_MAIN}
-  # Make an empty main directory with the correct permissions
-  mkdir $PGDATA_PARENT/main
-  chown postgres $PGDATA_PARENT/main
 fi
 
-# As postgres, shut down PostgreSQL if it is running
+# Make an empty main directory with the correct permissions
+mkdir $PGDATA_PARENT/main
+chown postgres $PGDATA_PARENT/main
+
+# As postgres, init PostgreSQL db
 docker run -u postgres ${PG_RUN} bash -c '
   POSTGRES_PASSWORD=$POSTGRES_PASSWORD
   echo PATH2=$PATH
@@ -116,21 +122,6 @@ docker run -u postgres ${PG_RUN} bash -c "
   touch rollbackSuccess
   exit 0
 "
-
-# restore the HEAD to dumpall if needed
-if [ ! -z "${last_postgres}"  ]; then
-  # As postgres:
-  #   - check out the latest version of pg_dumpall.sql
-  docker run -u postgres ${PG_RUN} bash -c "
-    echo PATH2a=\$PATH
-    "'PATH=$PATH'"
-    echo PATH2b=\$PATH
-    cd ${PGDATA}
-    set -e
-    ls -lR ${EXPORT_DIR}/dumpall
-    ${EXPORT_DIR}/support/cvs -d ${EXPORT_DIR}/backup/pg co -d ${EXPORT_DIR}/dumpall dumpall
-  "
-fi
 
 test -f $PGDATA_PARENT/main/rollbackSuccess
 if [ $# -eq 0 ]; then
