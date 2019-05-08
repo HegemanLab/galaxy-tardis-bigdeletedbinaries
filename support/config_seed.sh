@@ -46,9 +46,9 @@ su -c "
 
 su -c "
   cd ${EXPORT_DIR}/config
+  cvs -d ${EXPORT_DIR}/backup/config update 2>/dev/null | sed -n '/^C /{s/^C //;p}' | xargs rm 2>/dev/null
   cvs -d ${EXPORT_DIR}/backup/config update -C | grep -v '^[?] '
 " galaxy
-# cvs -d ${EXPORT_DIR}/backup/config update 2>/dev/null | sed -n '/^C /{s/^C //;p}' | xargs rm 2>/dev/null
 
 # As root, make sure that:
 #   - the pgadmin      CVS repo  exists with proper permissions
@@ -70,9 +70,9 @@ su -c "
 
 su -c "
   cd ${EXPORT_DIR}/pgadmin
+  cvs -d ${EXPORT_DIR}/backup/pgadmin update 2>/dev/null | sed -n '/^C /{s/^C //;p}' | xargs rm 2>/dev/null
   cvs -d ${EXPORT_DIR}/backup/pgadmin update -C | grep -v '^[?] '
 " galaxy
-# cvs -d ${EXPORT_DIR}/backup/pgadmin update 2>/dev/null | sed -n '/^C /{s/^C //;p}' | xargs rm 2>/dev/null
 
 chown -R 1000 ${EXPORT_DIR}/pgadmin
 chmod -R g+w  ${EXPORT_DIR}/pgadmin
