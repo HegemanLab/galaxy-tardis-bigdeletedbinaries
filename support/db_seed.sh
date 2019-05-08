@@ -110,6 +110,8 @@ docker run -u postgres ${PG_RUN} bash -c "
   "'PATH=$PATH'"
   echo PATH3b=\$PATH
   cd ${PGDATA}
+  echo Restore PostgreSQL database at
+  pwd
   pg_ctl -D . -l ./logfile start
   set +e
   sleep 5
@@ -118,17 +120,20 @@ docker run -u postgres ${PG_RUN} bash -c "
     echo PostgreSQL restoration failure
     exit 1
   }
-  ls -l ${PGDATA}
   touch rollbackSuccess
+  ls -l ${PGDATA}
   exit 0
 "
 
-test -f $PGDATA_PARENT/main/rollbackSuccess
+if [ -d $PGDATA_PARENT/main.fail ]; then
+  rm -rf $PGDATA_PARENT/main.fail
+fi
+test -f $PGDATA/rollbackSuccess
 if [ $# -eq 0 ]; then
-  rm $PGDATA_PARENT/main/rollbackSuccess
+  rm $PGDATA/rollbackSuccess
   echo Old database preserved at $HOST_PGDATA_PARENT/${OLD_MAIN}
 elif [ ! -z "${OLD_MAIN}" ]; then
-  rm -rf $PGDATA_PARENT/main
+  mv $PGDATA_PARENT/main $PGDATA_PARENT/main.fail
   mv $PGDATA_PARENT/${OLD_MAIN} $PGDATA_PARENT/main
 fi
 
