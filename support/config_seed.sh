@@ -20,8 +20,8 @@ if [ ! -z "${last_config}"  ]; then
   last_config="-D ${my_date}"
 fi
 
-echo "EXPORT_DIR         = ${EXPORT_DIR:?}"
-echo "last_config      = ${last_config}"
+echo "EXPORT_DIR  = ${EXPORT_DIR:?}"
+echo "last_config = ${last_config}"
 
 set -x
 
@@ -44,21 +44,35 @@ su -c "
   cvs -d ${EXPORT_DIR}/backup/config co -d . ${last_config} config | grep -v '^[?] '
 " galaxy
 
-# fail if last line of the following su list fails
-set -e
-
 su -c "
   cd ${EXPORT_DIR}/config
-  cvs -d ${EXPORT_DIR}/backup/config update 2>/dev/null | sed -n '/^C /{s/^C //;p}' | xargs rm 2>/dev/null
-  cvs -d ${EXPORT_DIR}/backup/config update | grep -v '^[?] '
+  cvs -d ${EXPORT_DIR}/backup/config update -C | grep -v '^[?] '
+" galaxy
+# cvs -d ${EXPORT_DIR}/backup/config update 2>/dev/null | sed -n '/^C /{s/^C //;p}' | xargs rm 2>/dev/null
+
+# As root, make sure that:
+#   - the pgadmin      CVS repo  exists with proper permissions
+if [ ! -d ${EXPORT_DIR}/backup/pgadmin ]; then
+  echo ERROR Missing optional directory ${EXPORT_DIR}/backup/pgadmin
+  exit 0
+fi
+
+chgrp -R galaxy ${EXPORT_DIR}/pgadmin
+chmod -R g+w  ${EXPORT_DIR}/pgadmin
+if [ -d ${EXPORT_DIR}/pgadmin/CVS ]; then
+  rm -rf ${EXPORT_DIR}/pgadmin/CVS
+fi
+su -c "
+  set -x
+  cd ${EXPORT_DIR}/pgadmin
+  cvs -d ${EXPORT_DIR}/backup/pgadmin co -d . ${last_pgadmin} pgadmin | grep -v '^[?] '
 " galaxy
 
-# restore HEAD to config if needed
-if [ ! -z "${last_config}"  ]; then
-  su -c "
-    set -x
-    whoami
-    cd ${EXPORT_DIR}/config
-    cvs -d ${EXPORT_DIR}/backup/config co -d . config | grep -v '^[?] '
-  " galaxy
-fi
+su -c "
+  cd ${EXPORT_DIR}/pgadmin
+  cvs -d ${EXPORT_DIR}/backup/pgadmin update -C | grep -v '^[?] '
+" galaxy
+# cvs -d ${EXPORT_DIR}/backup/pgadmin update 2>/dev/null | sed -n '/^C /{s/^C //;p}' | xargs rm 2>/dev/null
+
+chown -R 1000 ${EXPORT_DIR}/pgadmin
+chmod -R g+w  ${EXPORT_DIR}/pgadmin

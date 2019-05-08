@@ -37,17 +37,25 @@ if [ ! -d $EXPORT_ROOT/backup/config ]; then
 fi
 chown galaxy:galaxy $EXPORT_ROOT/backup/config
 
+if [ ! -d $EXPORT_ROOT/backup/pgadmin ]; then
+  mkdir -p $EXPORT_ROOT/backup/pgadmin
+fi
+chown galaxy:galaxy $EXPORT_ROOT/backup/pgadmin
+
 if [ ! -d $EXPORT_ROOT/backup/pg ]; then
   mkdir $EXPORT_ROOT/backup/pg
 fi
 chown postgres $EXPORT_ROOT/backup/pg
 
+set -x
 # retrieve the CVS repositories
 su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/config/" galaxy
+su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/pgadmin/" galaxy
 su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/backup/pg/"     postgres
 
 # retrieve Galaxy config files necessary to restore the UI
 su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/config/ restore" galaxy
+su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/pgadmin/ restore" galaxy
 
 # restore files necessary to run the installed shed tools
 su -c "$OPT_ROOT/s3/bucket_retrieve.sh $EXPORT_ROOT/shed_tools/" galaxy

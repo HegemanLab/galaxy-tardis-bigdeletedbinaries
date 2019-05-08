@@ -47,11 +47,20 @@ chown -R postgres:postgres ${EXPORT_DIR}/dumpall
 #   commit
 su -l -c "
   ${CVS} -d ${EXPORT_DIR}/backup/pg co -d ${EXPORT_DIR}/dumpall dumpall
-  pg_dumpall > ${EXPORT_DIR}/dumpall/pg_dumpall.sql
+  echo '\\set ON_ERROR_STOP 0' > ${EXPORT_DIR}/dumpall/pg_dumpall.sql
+  pg_dumpall >> ${EXPORT_DIR}/dumpall/pg_dumpall.sql
+  sed -i -e '"'/-- Database creation/a \
+\\set ON_ERROR_STOP 1'"' ${EXPORT_DIR}/dumpall/pg_dumpall.sql
   cd ${PGDATA}
   cp *.conf ${EXPORT_DIR}/dumpall
   cd ${EXPORT_DIR}/dumpall
-  ${CVS} add *.conf pg_dumpall.sql
+  echo '"'#!/bin/bash
+  echo "Initializing galaxy database with defaults"
+  "${psql[@]}" < /docker-entrypoint-initdb.d/init-galaxy-db.sql.in
+  echo "Successfully initialized galaxy database"
+  '"'> ${EXPORT_DIR}/dumpall/init-galaxy-db.sh
+  chmod +x ${EXPORT_DIR}/dumpall/init-galaxy-db.sh
+  ${CVS} add *.conf pg_dumpall.sql init-galaxy-db.sh
   ${CVS} commit -m 'Database file-backup - $(date)'
   grep pg_dumpall.sql CVS/Entries
 " postgres

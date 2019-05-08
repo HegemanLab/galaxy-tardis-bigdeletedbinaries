@@ -113,6 +113,7 @@ case "$subcommand" in
       exit 1
     fi
     docker exec galaxy-init bash -c "export EXPORT_DIR=${EXPORT_DIR}; ${EXPORT_DIR}/support/config_xml_dump.sh" | tee -a ${EXPORT_DIR}/var/log/run_backup.log
+    docker exec galaxy-init bash -c "export EXPORT_DIR=${EXPORT_DIR}; ${EXPORT_DIR}/support/pgadmin_dump.sh" | tee -a ${EXPORT_DIR}/var/log/run_backup.log
 
     echo "Collecting Galaxy database records"
     docker cp /opt/support/ galaxy-postgres:${EXPORT_DIR}/; exit_code="$?"

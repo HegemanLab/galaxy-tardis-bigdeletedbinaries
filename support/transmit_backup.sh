@@ -40,6 +40,8 @@ $OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/shed_tools/
 # save the static web site content
 $OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/welcome/
 
+# save the pgadmin data, if any
+$OPT_ROOT/s3/bucket_backup.sh $EXPORT_ROOT/pgadmin/
 
 echo `date -I'seconds'` Backup finishing
 echo ...

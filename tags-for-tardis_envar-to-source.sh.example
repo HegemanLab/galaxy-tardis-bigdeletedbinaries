@@ -1,5 +1,7 @@
 EXPORT_DIR=/path/to/export
+INTERNAL_EXPORT_DIR='/export'
+
 PGDATA_PARENT=/path/to/postgres
-TAG_POSTGRES=9.6.5_for_19.01
 IMAGE_POSTGRES='quay.io/bgruening/galaxy-postgres'
+TAG_POSTGRES=9.6.5_for_19.01
 CONTAINER_POSTGRES='galaxy-postgres'
