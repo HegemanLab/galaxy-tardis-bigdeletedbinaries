@@ -6,9 +6,9 @@ I created this repository to implement a back-up path to store the configuration
 The very terse summary is to invoke a backup on Galomix2 in two steps:
 ```bash
 # Collect configuration data from the running instance.
-sudo ssh galaxy rootless bash /datapool/galaxy/home/piquint/export/tardis.sh backup
+sudo ssh galaxy rootlesskit --disable-host-loopback bash /datapool/galaxy/home/piquint/export/tardis.sh backup
 # Transmit the configuration, histories, datasets, and even shed tools to CephS3 storage at MSI.
-sudo ssh galaxy rootless bash /datapool/galaxy/home/piquint/export/tardis.sh transmit
+sudo ssh galaxy rootlesskit --disable-host-loopback bash /datapool/galaxy/home/piquint/export/tardis.sh transmit
 ```
 
 In the long run I hope to make this more generalized.  Right now this exists to help me maintain our production Galaxy instance.
