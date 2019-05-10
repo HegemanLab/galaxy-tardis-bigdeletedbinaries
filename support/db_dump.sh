@@ -64,4 +64,3 @@ su -l -c "
   ${CVS} commit -m 'Database file-backup - $(date)'
   grep pg_dumpall.sql CVS/Entries
 " postgres
-
