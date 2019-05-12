@@ -23,11 +23,8 @@ fi
 echo "EXPORT_DIR  = ${EXPORT_DIR:?}"
 echo "last_config = ${last_config}"
 
-set -x
-
 # As root, make sure that:
 #   - the config      CVS repo  exists with proper permissions
-set -x
 if [ ! -d ${EXPORT_DIR}/backup/config ]; then
   echo ERROR Missing required directory ${EXPORT_DIR}/backup/config
   exit 1
@@ -38,7 +35,6 @@ if [ -d ${EXPORT_DIR}/config/CVS ]; then
   rm -rf ${EXPORT_DIR}/config/CVS
 fi
 su -c "
-  set -x
   whoami
   cd ${EXPORT_DIR}/config
   cvs -d ${EXPORT_DIR}/backup/config co -d . ${last_config} config | grep -v '^[?] '
@@ -54,25 +50,51 @@ su -c "
 #   - the pgadmin      CVS repo  exists with proper permissions
 if [ ! -d ${EXPORT_DIR}/backup/pgadmin ]; then
   echo ERROR Missing optional directory ${EXPORT_DIR}/backup/pgadmin
-  exit 0
+else
+  chgrp -R galaxy ${EXPORT_DIR}/pgadmin
+  chmod -R g+w  ${EXPORT_DIR}/pgadmin
+  if [ -d ${EXPORT_DIR}/pgadmin/CVS ]; then
+    rm -rf ${EXPORT_DIR}/pgadmin/CVS
+  fi
+  su -c "
+    cd ${EXPORT_DIR}/pgadmin
+    cvs -d ${EXPORT_DIR}/backup/pgadmin co -d . ${last_config} pgadmin | grep -v '^[?] '
+  " galaxy
+
+  su -c "
+    cd ${EXPORT_DIR}/pgadmin
+    cvs -d ${EXPORT_DIR}/backup/pgadmin update 2>/dev/null | sed -n '/^C /{s/^C //;p}' | xargs rm 2>/dev/null
+    cvs -d ${EXPORT_DIR}/backup/pgadmin update -C | grep -v '^[?] '
+  " galaxy
+
+  chown -R 1000 ${EXPORT_DIR}/pgadmin
+  chmod -R g+w  ${EXPORT_DIR}/pgadmin
 fi
 
-chgrp -R galaxy ${EXPORT_DIR}/pgadmin
-chmod -R g+w  ${EXPORT_DIR}/pgadmin
-if [ -d ${EXPORT_DIR}/pgadmin/CVS ]; then
-  rm -rf ${EXPORT_DIR}/pgadmin/CVS
-fi
-su -c "
-  set -x
-  cd ${EXPORT_DIR}/pgadmin
-  cvs -d ${EXPORT_DIR}/backup/pgadmin co -d . ${last_pgadmin} pgadmin | grep -v '^[?] '
-" galaxy
-
-su -c "
-  cd ${EXPORT_DIR}/pgadmin
-  cvs -d ${EXPORT_DIR}/backup/pgadmin update 2>/dev/null | sed -n '/^C /{s/^C //;p}' | xargs rm 2>/dev/null
-  cvs -d ${EXPORT_DIR}/backup/pgadmin update -C | grep -v '^[?] '
-" galaxy
-
-chown -R 1000 ${EXPORT_DIR}/pgadmin
-chmod -R g+w  ${EXPORT_DIR}/pgadmin
+# As root, make sure that:
+#   - the conda      CVS repo  exists with proper permissions
+rm -rf ${EXPORT_DIR}/restore/conda
+mkdir -p ${EXPORT_DIR}/restore/conda
+chown -R galaxy:galaxy ${EXPORT_DIR}/restore/conda
+chmod -R g+w  ${EXPORT_DIR}/restore/conda
+cp /opt/support/cvs /export/support/cvs
+# Populate the sandbox, then, for each non-existing environment, reconstitute it
+#   Note that no attmept is made to restore the base environment
+SUBCOMMAND="
+  cd ${EXPORT_DIR}/restore/conda
+  /export/support/cvs -d ${EXPORT_DIR}/backup/conda co -d . ${last_config} conda | grep -v '^[?] '
+  source ${EXPORT_DIR}/tool_deps/_conda/bin/activate
+  for f in *.yml; do
+    b=\`echo \$(basename \$f) | sed -e 's/.yml\$//'\`
+    if [ \"\$b\" != \"base.yml\" ]; then
+      if [ ! -d ${EXPORT_DIR}/tool_deps/_conda/envs/\$b ]; then
+        conda env create -f \$b.yml
+      else
+        echo Conda environment \$b already exists
+      fi
+    fi
+  done
+  conda deactivate
+"
+set +x
+docker exec -ti -u galaxy galaxy-web bash -c "$SUBCOMMAND"

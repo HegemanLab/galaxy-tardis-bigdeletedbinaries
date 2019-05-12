@@ -8,7 +8,7 @@ RUN adduser -s /bin/bash -h /export -D -H -u 1450 -g "Galaxy-file owner" galaxy
 #   See https://github.com/eschen42/alpine-cbuilder#statically-linked-busybox
 COPY support/busybox-static                  /opt/support/busybox
 RUN chmod +x /opt/support/busybox
-RUN cp /opt/support/busybox                  /bin/busybox
+RUN ln -f /opt/support/busybox               /bin/busybox
 # The coreutils binary adds a megabyte to the image size,
 #   but it gives some required invocation options for 'date'
 RUN apk add coreutils
@@ -31,7 +31,6 @@ COPY s3/live_file_backup.sh                  /opt/s3/live_file_backup.sh
 COPY s3/live_file_restore.sh                 /opt/s3/live_file_restore.sh
 COPY s3/bucket_backup.sh                     /opt/s3/bucket_backup.sh
 COPY s3/bucket_retrieve.sh                   /opt/s3/bucket_retrieve.sh
-RUN chmod +x                                 /opt/s3/*.sh
 # S3-independent scripts to support backup and restore
 COPY support/transmit_backup.sh              /opt/support/transmit_backup.sh
 COPY support/retrieve_backup.sh              /opt/support/retrieve_backup.sh
@@ -43,16 +42,18 @@ COPY support/config_seed.sh                  /opt/support/config_seed.sh
 # Dump and load PostgreSQL database
 COPY support/db_dump.sh                      /opt/support/db_dump.sh
 COPY support/db_seed.sh                      /opt/support/db_seed.sh
-RUN chmod +x                                 /opt/support/*.sh
 # Core executable for the TARDIS container
 COPY support/tardis                          /opt/support/tardis
-RUN chmod +x                                 /opt/support/tardis
 COPY support/tardis_setup                    /opt/support/tardis_setup
 # Daily backup cron task
 COPY support/backup.crontab                  /opt/support/backup.crontab
 # Entrypoint executable
 COPY init                                    /opt/init
+# Executable-file permissions (besides busybox and cvs because they are hard-linked)
 RUN chmod +x                                 /opt/init
+RUN chmod +x                                 /opt/s3/*.sh
+RUN chmod +x                                 /opt/support/*.sh
+RUN chmod +x                                 /opt/support/tardis
 # Set the entry point
 ENTRYPOINT ["/opt/init"]
 # Provide intra-container copy of this container-definition
