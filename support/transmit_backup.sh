@@ -49,4 +49,5 @@ echo ...
 BACKUP_LOG=$EXPORT_ROOT/var/log/run_backup.log
 if [ -f $BACKUP_LOG ]; then
   $OPT_ROOT/s3/bucket_backup.sh $BACKUP_LOG
+  rm $BACKUP_LOG
 fi
