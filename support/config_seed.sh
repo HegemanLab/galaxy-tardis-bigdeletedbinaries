@@ -73,17 +73,19 @@ fi
 
 # As root, make sure that:
 #   - the conda      CVS repo  exists with proper permissions
-rm -rf ${EXPORT_DIR}/restore/conda
-mkdir -p ${EXPORT_DIR}/restore/conda
+rm -rf                 ${EXPORT_DIR}/restore/conda
+mkdir -p               ${EXPORT_DIR}/restore/conda
+chmod -R g+w           ${EXPORT_DIR}/restore/conda
 chown -R galaxy:galaxy ${EXPORT_DIR}/restore/conda
-chmod -R g+w  ${EXPORT_DIR}/restore/conda
+chown -R galaxy:galaxy ${EXPORT_DIR}/tool_deps
 cp /opt/support/cvs /export/support/cvs
+
 # Populate the sandbox, then, for each non-existing environment, reconstitute it
 #   Note that no attmept is made to restore the base environment
 SUBCOMMAND="
+  . ${EXPORT_DIR}/tool_deps/_conda/bin/activate
   cd ${EXPORT_DIR}/restore/conda
   /export/support/cvs -d ${EXPORT_DIR}/backup/conda co -d . ${last_config} conda | grep -v '^[?] '
-  source ${EXPORT_DIR}/tool_deps/_conda/bin/activate
   for f in *.yml; do
     b=\`echo \$(basename \$f) | sed -e 's/.yml\$//'\`
     if [ \"\$b\" != \"base.yml\" ]; then
@@ -94,7 +96,21 @@ SUBCOMMAND="
       fi
     fi
   done
-  conda deactivate
+  is_conda_modern=\$(conda -V 2>&1 | sed -e '"'s/conda //; s/\([0-9]*\)[.]\([0-9]*\)[.].*$/ \1 -gt 4 -o \1 -eq 4 -a \2 -ge 6 /'"')
+  if [ \$is_conda_modern ]; then
+    echo 'conda is modern'
+    CONDA_DEACTIVATE='conda deactivate'
+  else
+    echo 'conda is legacy'
+    CONDA_DEACTIVATE='source deactivate'
+  fi
+  \$CONDA_DEACTIVATE
 "
 set +x
-docker exec -ti -u galaxy galaxy-web bash -c "$SUBCOMMAND"
+GALAXY_RUNNING=false
+docker ps | grep ${CONTAINER_GALAXY_INIT:?} && GALAXY_RUNNING=true
+if [ GALAXY_RUNNING == true ]; then
+  docker exec -ti -u galaxy ${CONTAINER_GALAXY_INIT:?} bash -c "$SUBCOMMAND"
+else
+  docker run --rm -ti -u galaxy --name apply-config -v ${HOST_EXPORT_DIR:?}:/export ${IMAGE_GALAXY_INIT:?}:${TAG_GALAXY:?} bash -c "$SUBCOMMAND"
+fi
