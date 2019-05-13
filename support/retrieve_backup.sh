@@ -37,6 +37,11 @@ if [ ! -d $EXPORT_ROOT/backup/config ]; then
 fi
 chown galaxy:galaxy $EXPORT_ROOT/backup/config
 
+if [ ! -d $EXPORT_ROOT/backup/conda ]; then
+  mkdir -p $EXPORT_ROOT/backup/conda
+fi
+chown galaxy:galaxy $EXPORT_ROOT/backup/conda
+
 if [ ! -d $EXPORT_ROOT/backup/pgadmin ]; then
   mkdir -p $EXPORT_ROOT/backup/pgadmin
 fi

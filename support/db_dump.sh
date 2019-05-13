@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-set -x
 CVS=${EXPORT_DIR:?}/support/cvs
 
 # set path to main postgresql database only when it is not already set

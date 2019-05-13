@@ -5,3 +5,7 @@ PGDATA_PARENT=/path/to/postgres
 IMAGE_POSTGRES='quay.io/bgruening/galaxy-postgres'
 TAG_POSTGRES=9.6.5_for_19.01
 CONTAINER_POSTGRES='galaxy-postgres'
+
+IMAGE_GALAXY_INIT='quay.io/bgruening/galaxy-init'
+CONTAINER_GALAXY_INIT='galaxy-init'
+TAG_GALAXY='19.01'

@@ -1,11 +1,15 @@
 #!/bin/bash
 set -e
-set -x
 export CVS=${EXPORT_DIR:?}/support/cvs
 
 # ensure that path ${EXPORT_DIR}/backup/pgadmin exists and is owned by galaxy
 if [ ! -d ${EXPORT_DIR}/backup/pgadmin ]; then
   mkdir -p ${EXPORT_DIR}/backup/pgadmin
+  chown galaxy:galaxy ${EXPORT_DIR}/backup/pgadmin
+  # wipe CVS directories from pgadmin sandbox
+  pushd ${EXPORT_DIR}/pgadmin
+  find . -type d -name 'CVS' -print | xargs rm -rf
+  popd
 fi
 
 # init CVS repository at ${EXPORT_DIR}/backup/pgadmin, owned by galaxy

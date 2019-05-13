@@ -15,6 +15,9 @@ source $DIR/tags-for-tardis_envar-to-source.sh
 # IMAGE_POSTGRES='quay.io/bgruening/galaxy-postgres'
 # CONTAINER_POSTGRES='galaxy-postgres'
 # TAG_POSTGRES='9.6.5_for_19.01'
+# CONTAINER_GALAXY_INIT='quay.io/bgruening/galaxy-init'
+# IMAGE_GALAXY_INIT='quay.io/bgruening/galaxy-init'
+# TAG_GALAXY='19.01'
 
 # fail if EXPORT_DIR is not specified; to address this failure, e.g., EXPORT_DIR=/full/path/to/export
 if [ ! -d ${EXPORT_DIR:?} ]; then
@@ -49,6 +52,9 @@ else
     -e TAG_POSTGRES=${TAG_POSTGRES:?} \
     -e IMAGE_POSTGRES=${IMAGE_POSTGRES:?} \
     -e CONTAINER_POSTGRES=${CONTAINER_POSTGRES:?} \
+    -e TAG_GALAXY=${TAG_GALAXY:?} \
+    -e IMAGE_GALAXY_INIT=${IMAGE_GALAXY_INIT:?} \
+    -e CONTAINER_GALAXY_INIT=${CONTAINER_GALAXY_INIT:?} \
     --name tardis tardis"
   echo "TARDIS=$TARDIS"
 fi
