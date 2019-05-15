@@ -12,6 +12,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
 subcommand=$1
 subarg=$2
+subarg2=$3
 
 # read preparatory stuff from this file
 source $DIR/tardis_setup
@@ -31,6 +32,9 @@ Usage:
   tardis purge_empty_tmp_dirs  - Purge empty tmp directories that accumulate with datasets.
   tardis cron                  - Run dcron NOT as daemon to run backup daily.
   tardis upgrade_database      - Upgrade the PostgreSQL database to match the Galaxy version.
+
+  tardis upgrade_conda [url_or_path] [md5sum]
+                               - Upgrade conda (e.g. from https://repo.continuum.io/miniconda/).
   tardis bash                  - Enter a bash shell, if applicable.
 
 Optional environment variables:
@@ -212,6 +216,16 @@ case "$subcommand" in
     echo `date -I'seconds'` "Purge empty tmp dirs starting"
     find ${EXPORT_DIR}/galaxy-central/database/files/ -maxdepth 1 -type d -name 'tmp*' -exec rmdir {} \;
     echo `date -I'seconds'` "Purge empty tmp dirs ended"
+    echo ...
+    exit 0
+    ;;
+  upgrade_conda)
+    reqmnt ${EXPORT_DIR}
+    echo ---
+    echo `date -I'seconds'` Upgrade conda starting
+    echo "/opt/support/conda_upgrade.sh '${subarg}' '${subarg2}'"
+    /opt/support/conda_upgrade.sh "${subarg}" "${subarg2}"
+    echo `date -I'seconds'` Upgrade conda ended
     echo ...
     exit 0
     ;;
