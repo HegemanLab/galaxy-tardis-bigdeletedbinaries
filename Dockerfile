@@ -39,6 +39,8 @@ COPY support/config_xml_dump.sh              /opt/support/config_xml_dump.sh
 COPY support/pgadmin_dump.sh                 /opt/support/pgadmin_dump.sh
 # Load galaxy configuration files and downloaded shed tools
 COPY support/config_seed.sh                  /opt/support/config_seed.sh
+# Upgrade miniconda as needed
+COPY support/conda_upgrade.sh                /opt/support/conda_upgrade.sh
 # Dump and load PostgreSQL database
 COPY support/db_dump.sh                      /opt/support/db_dump.sh
 COPY support/db_seed.sh                      /opt/support/db_seed.sh
