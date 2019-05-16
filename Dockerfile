@@ -16,7 +16,7 @@ RUN apk add coreutils
 RUN apk add bash curl
 # Include s3cmd for transmitting files to Amazon-S3 compatible buckets.  See e.g.:
 #   https://en.wikipedia.org/wiki/Amazon_S3#S3_API_and_competing_services
-RUN apk add --no-cache py-pip && pip install s3cmd
+RUN apk add py-pip && pip install s3cmd
 # Support scheduled activity, e.g., daily backups
 RUN apk add dcron
 # copy docker binary from https://github.com/rootless-containers/usernetes/releases/tag/v20190212.0
@@ -51,6 +51,10 @@ COPY support/tardis_setup                    /opt/support/tardis_setup
 COPY support/backup.crontab                  /opt/support/backup.crontab
 # Entrypoint executable
 COPY init                                    /opt/init
+# Support documentation in the unix-manual format
+RUN apk add man && bash -c "for i in {1..8}; do mkdir -p /usr/local/man/man${i}; done"
+# Support the vim editor
+RUN apk add vim
 # Executable-file permissions (besides busybox and cvs because they are hard-linked)
 RUN chmod +x                                 /opt/init
 RUN chmod +x                                 /opt/s3/*.sh
