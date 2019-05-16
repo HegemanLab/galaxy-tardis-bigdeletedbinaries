@@ -3,7 +3,8 @@ echo "$0 - Update conda version"
 my_script="$0"
 miniconda_url_or_path="$1"
 miniconda_hash="$2"
-STAGED_MINICONDA_INSTALLER=/export/ftp/miniconda.sh
+miniconda_staging_path="$3"
+STAGED_MINICONDA_INSTALLER=${miniconda_staging_path:-/export/miniconda.sh}
 DELETE_STAGED_INSTALLER=yes
 usage() {
   echo "
