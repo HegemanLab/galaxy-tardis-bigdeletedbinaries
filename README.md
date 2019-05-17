@@ -1,19 +1,25 @@
+# TARDIS - Temporal Archive Remote Distribution and Installation System
 
-# How to use this repository to support Pisces V
+The purpose of this Docker image is to back up and restore Galaxy instances that are based on [galaxy-docker-stable](https://github.com/bgruening/docker-galaxy-stable/).  The only storage back-end implemented thus far is S3-compatible storage such as Ceph.
 
-I created this repository to implement a back-up path to store the configuration and datasets from Galaxy in CephS3 storage at the University of Minnesota.  I have used this strategy to back up and restore histories, workflows, and datasets through several iterations of the `Pisces` instance.  This is for the fifth iteration, `Pisces V`, when I have the chance to bring it up, populating it from the backup of `Pisces IV`.
+Usage for the `suppport/tardis` script is as follows:
+```
+  tardis backup                - Back up PostgreSQL database and galaxy-central/config.
+  tardis transmit              - Transmit datasets and backup to Amazon-S3-compatible storage.
+  tardis retrieve_config       - Retrieve database and config backup (but not datasets) from S3.
+  tardis apply_config [date]   - Restore config from backup, whether from S3 or "tardis backup".
+  tardis restore_files         - Retrieve datasets from S3 (not desirable when using object store).
+  tardis seed_database [date]  - Replace PostgreSQL database with copy from backup.
+  tardis purge_empty_tmp_dirs  - Purge empty tmp directories that accumulate with datasets.
+  tardis cron                  - Run dcron NOT as daemon to run backup daily.
+  tardis upgrade_database      - Upgrade the PostgreSQL database to match the Galaxy version.
 
-The very terse summary is to invoke a backup on Galomix2 in two steps:
-```bash
-# Collect configuration data from the running instance.
-sudo ssh galaxy rootlesskit --disable-host-loopback bash /datapool/galaxy/home/piquint/export/tardis.sh backup
-# Transmit the configuration, histories, datasets, and even shed tools to CephS3 storage at MSI.
-sudo ssh galaxy rootlesskit --disable-host-loopback bash /datapool/galaxy/home/piquint/export/tardis.sh transmit
+  tardis upgrade_conda [url_or_path] [md5sum]
+                               - Upgrade conda (e.g. from https://repo.continuum.io/miniconda/).
+  tardis bash                  - Enter a bash shell, if applicable.
 ```
 
-In the long run I hope to make this more generalized.  Right now this exists to help me maintain our production Galaxy instance.
-
-# How to use ths repository more generally - use docker
+# How to use ths repository
 
 ## build
 
@@ -33,7 +39,6 @@ In the long run I hope to make this more generalized.  Right now this exists to 
 
 The TARDIS needs to use docker to run commands in the other containers.  Therefore, you will need to forward the dockerd socket into the container, as shown below.
 
-It is likely you will include this in a composition.  If you don't, you will invoke it as:
 ```
 # using rootless dockerd on usernetes
 TARDIS="docker run --rm -ti -v ${XDG_RUNTIME_DIR}/docker.sock:/var/run/docker.sock -v /path/to/export:/export --name tardis tardis"
@@ -44,7 +49,8 @@ $TARDIS backup
 # Transmit the configuration, histories, datasets, and even shed tools to CephS3 storage at MSI.
 $TARDIS export
 ```
-If you do use the TARDIS in a composition, use the above as a guide.
+
+Other commands will require other environment variables; see `tags-for-tardis_envar-to-source.sh.example`.  For convenience, when you source the `tardis_envar.sh` script, it reads variables from `tags-for-tardis_envar-to-source.sh` and sets up the `TARDIS` variable accordingly.
 
 # CVS
 
