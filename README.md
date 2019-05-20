@@ -63,3 +63,16 @@ There may be a modern source control system that could achieve compact storage a
 ## Statically linked `cvs` binary
 
 The `support/cvs-static` binary was compiled and statically linked as described at [https://github.com/eschen42/alpine-cbuilder#a-use-case](https://github.com/eschen42/alpine-cbuilder#a-use-case)
+
+# Docker client
+
+The `support/docker-usernetes` binary is a statically linked binary that was extracted from:
+[https://github.com/rootless-containers/usernetes/releases/tag/v20190511.1](https://github.com/rootless-containers/usernetes/releases/tag/v20190511.1)
+as follows:
+```bash
+wget https://github.com/rootless-containers/usernetes/releases/download/v20190511.1/usernetes-x86_64.tbz
+bzip2 -d usernetes-x86_64.tbz
+tar -xvf usernetes-x86_64.tar usernetes/bin/docker
+cp usernetes/bin/docker support/docker-usernetes
+rm -rf usernetes-x86_64.tar usernetes
+```
