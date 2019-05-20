@@ -4,12 +4,17 @@ MAINTAINER Art Eschenlauer, esch0041@umn.edu
 RUN sed -i -e 's/^postgres:x:[^:]*:[^:]*:/postgres:x:999:999:/' /etc/passwd
 RUN sed -i -e 's/^postgres:x:[^:]*:/postgres:x:999:/'           /etc/group
 RUN adduser -s /bin/bash -h /export -D -H -u 1450 -g "Galaxy-file owner" galaxy
+
 # Substitute statically linked busybox so that it can be shared with glibc-based containers
 #   See https://github.com/eschen42/alpine-cbuilder#statically-linked-busybox
-COPY support/busybox-static                  /opt/support/busybox
-#Don't do chmod here - it baloons the image size; set the execute bit before buiding the image
-#RUN chmod +x /opt/support/busybox
+#   and https://github.com/HegemanLab/galaxy-tardis/releases/tag/binary1-pre
+RUN mkdir -p /opt/support && \
+    cd       /opt/support && \
+    wget https://github.com/HegemanLab/galaxy-tardis/releases/download/binary1-pre/busybox-static.gz --output-document busybox.gz && \
+    gzip -d busybox.gz && \
+    chmod +x busybox
 RUN ln -f /opt/support/busybox               /bin/busybox
+
 # The coreutils binary adds a megabyte to the image size,
 #   but it gives some required invocation options for 'date'
 RUN apk add coreutils
@@ -20,15 +25,26 @@ RUN apk add bash curl
 RUN apk add py-pip && pip install s3cmd
 # Support scheduled activity, e.g., daily backups
 RUN apk add dcron
-# Copy docker binary from https://github.com/rootless-containers/usernetes/releases/tag/v20190212.0
-COPY support/docker-usernetes                /usr/local/bin/docker
-#Don't do chmod here - it baloons the image size; set the execute bit before buiding the image
-#RUN chmod +x                                 /usr/local/bin/docker
+
+# Add statically linked docker binary
+#   See https://github.com/rootless-containers/usernetes/releases/tag/v20190212.0
+#   and https://github.com/HegemanLab/galaxy-tardis/releases/tag/binary1-pre
+RUN mkdir -p /usr/local/bin && \
+    cd       /usr/local/bin && \
+    wget https://github.com/HegemanLab/galaxy-tardis/releases/download/binary1-pre/docker-usernetes.gz --output-document docker.gz && \
+    gzip -d docker.gz && \
+    chmod +x docker && \
+    cd ..
+
 # Add statically linked cvs binary so that it can be shared with glibc-based containers
 #   See https://github.com/eschen42/alpine-cbuilder#cvs-executable-independent-of-glibc
-COPY support/cvs-static                      /opt/support/cvs
-RUN chmod +x                                 /opt/support/cvs
+#   and https://github.com/HegemanLab/galaxy-tardis/releases/tag/binary1-pre
+RUN cd /opt/support && \
+    wget https://github.com/HegemanLab/galaxy-tardis/releases/download/binary1-pre/cvs-static.gz --output-document cvs.gz && \
+    gzip -d cvs.gz && \
+    chmod +x cvs
 RUN ln       /opt/support/cvs                /usr/local/bin/cvs
+
 # Support file, configuration, and database backup and restore with S3-compatible block storage
 COPY s3/live_file_backup.sh                  /opt/s3/live_file_backup.sh
 COPY s3/live_file_restore.sh                 /opt/s3/live_file_restore.sh
