@@ -1,0 +1,15 @@
+#!/bin/sh
+echo find and destroy exited containers
+echo ---
+for c in $(docker ps -a --filter="status=exited" -q); do
+  docker rm $c
+done
+
+echo ...
+echo find and destroy orphaned volumes
+echo ---
+for v in $(docker volume ls -q -f 'dangling=true'); do
+  docker volume rm $v
+done
+echo ...
+echo "tabula rasa!"

@@ -1,0 +1,65 @@
+#!/bin/bash
+# step 1: Copy setup_env.example to setup_env.custom (or whatever you choose)
+# step 2: Edit setup_env.custom as appropriate for your installation
+# step 3: `bash setup_env.custom`, which generates
+#           ./env-for-TLDR, ./tardis/s3/dest.config,
+#           ./env-for-compose-to-source.sh, and ./tags-for-compose-to-source.sh
+# step 4: Using ./tardis/s3/dest.s3cfg.example as a guide, create or link
+#           ./tardis/s3/dest.s3cfg
+# step 4: `bash TLDR`
+
+# get required environment variables
+. env-for-TLDR
+echo "
+RESTORE_GALAXY      : ${RESTORE_GALAXY:?}
+MY_INSTANCE         : ${MY_INSTANCE:?}
+MY_BUCKET_PREFIX    : ${MY_BUCKET_PREFIX:?}
+MY_GALAXY_POSTGRES  : ${MY_GALAXY_POSTGRES:?}
+MY_GALAXY_EXPORT    : ${MY_GALAXY_EXPORT:?}
+MY_USERNETES        : ${MY_USERNETES:?}
+MY_S3CFG            : ${MY_S3CFG:?}
+MY_CONFIG           : ${MY_CONFIG_BUCKET:?}
+MY_DATASETS         : ${MY_DATASET_BUCKET:?}
+MY_COMPOSE_FILE     : ${MY_COMPOSE_FILE:?}
+ls -l tardis/s3/dest.s3cfg tardis/s3/dest.config 
+"
+ln -s -f dot_env_for_compose .env > /dev/null
+ROODO='rootlesskit --disable-host-loopback'
+# Create storage directories and set ownership
+if [ ! -d ${MY_GALAXY_EXPORT:?}   ]; then $ROODO mkdir -p ${MY_GALAXY_EXPORT}  ; fi
+if [ ! -d ${MY_GALAXY_POSTGRES:?} ]; then $ROODO mkdir -p ${MY_GALAXY_POSTGRES}; fi
+$ROODO mkdir -p        ${MY_GALAXY_EXPORT:?}/pgadmin
+$ROODO chown 1000:50   ${MY_GALAXY_EXPORT:?}/pgadmin/
+$ROODO chown 999:1550  ${MY_GALAXY_POSTGRES:?}
+$ROODO chmod 775       ${MY_GALAXY_POSTGRES:?}
+if [ ! -d ${MY_GALAXY_POSTGRES:?}/main ]; then
+  $ROODO mkdir -p ${MY_GALAXY_POSTGRES:?}//main
+fi
+$ROODO chown 999:1550  ${MY_GALAXY_POSTGRES:?}/main/
+$ROODO chmod 775       ${MY_GALAXY_POSTGRES:?}/main/
+
+# # Comment this out after the first pull if you don't want images to update each time you run this
+docker-compose -f ${MY_COMPOSE_FILE:?} pull
+
+if [ "${RESTORE_GALAXY:?}" == "false" ]; then
+  # Initialize Galaxy and upgrade the database to match the inited Galaxy's version
+  ./compose_start.sh --init-only --upgrade-db
+else
+  # Initialize Galaxy export and database - this kills itself after circa 5 minutes
+  ./compose_start.sh --init-only --no-init-db
+  # Restore Galaxy ... adjust as needed, e.g., use --Miniconda3 when Galaxy uses python3
+  ./compose_restore.sh --Miniconda2 --retrieve_config --apply_config --datasets --database
+  # Be sure tool_conf.xml exists, owned by Galaxy
+  if [ ! -f ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml ]; then
+    $ROODO cp ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml.main ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml
+    $ROODO chown 1450:1450 ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml
+  fi
+  # Upgrade the database to match the inited Galaxy's version
+  ./compose_start.sh --init-only --upgrade-db
+fi
+
+# Start Galaxy - kill by pressing control-C only ONCE for a clean shutdown.
+./compose_start.sh # or, if screen is installed:
+# screen -S ${MY_INSTANCE:?} ./compose_start.sh        # Start composition in foreground
+# screen -S ${MY_INSTANCE:?} -d -m ./compose_start.sh  # Start composition in foreground
+

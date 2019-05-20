@@ -1,0 +1,6 @@
+#!/bin/bash
+# emit skeletion of DockerFile for the image given by the first (and only) argument
+echo "# Here is a skeleton DockerFile for docker image '$1'"
+docker history --no-trunc $1 \
+| sed '1 d; s/.* ago [ ]*/RUN /; s/[ ][ ]*[0-9.][0-9.]*[kMG]*B[ ][ ]*$//; s/^RUN .bin.sh -c #.nop. [ ]*//' \
+| tac

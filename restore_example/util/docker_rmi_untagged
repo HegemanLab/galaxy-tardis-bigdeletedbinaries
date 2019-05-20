@@ -1,0 +1,3 @@
+#!/bin/bash
+# find and remove images with no tag and no repository name
+docker rmi $(docker images | grep '^[<]none[>] .*[<]none[>]' | sed -e 's/  [ ]*/:/g' | cut -f 3 -d :)

@@ -1,0 +1,8 @@
+#!/bin/sh
+# Run bash within an already-running container
+# arg1 - ID or nickname of a running container
+if [ "'${COLUMNS}x'" = "'x'" ]; then
+  echo Please 'export COLUMNS' before running this script.
+else
+ docker exec -ti $1 bash -c "export TERM=xterm; export COLUMNS=$COLUMNS; /bin/bash"
+fi

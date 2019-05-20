@@ -1,0 +1,117 @@
+#!/bin/bash
+# setup_env.in
+#   This is sourced by setup_env.example to set up environment variable files for the restoration example.
+
+echo "
+RESTORE_GALAXY=${RESTORE_GALAXY:?}
+
+# Name you will use for your Galaxy instance
+#  Currently only used by 'screen' and in this file, but you use it as you want
+MY_INSTANCE=${MY_INSTANCE:?}
+# Prefix for bucket names - again, feel free to change it
+MY_BUCKET_PREFIX=${MY_BUCKET_PREFIX:?}
+
+# Path on docker host to directory that will be mounted as '/export' in container
+MY_GALAXY_EXPORT=${MY_GALAXY_EXPORT:?}
+# Path on docker host to directory whose subdirectory 'main' will be mounted as '/var/lib/postgresql/data' in container
+MY_GALAXY_POSTGRES=${PGDATA_PARENT:?}/${PGDATA_SUBDIR:?}
+# Path on docker host where usernetes is located, if you are using usernetes,
+#   e.g., an unzipped release from https://github.com/rootless-containers/usernetes/releases
+MY_USERNETES=${MY_USERNETES:?}
+
+# Path to the config file for s3cmd, see https://github.com/s3tools/s3cmd
+MY_S3CFG=${MY_S3CFG:?}
+
+# Name of configuration-backup bucket on S3-compatible storage; stores backups but not datasets
+MY_CONFIG_BUCKET=${MY_CONFIG_BUCKET:?}
+
+# Name of dataset-backup bucket on S3-compatible storage; stores datasets
+#   If you are using an S3 or SWIFT object store for Galaxy, use the name of that bucket here
+MY_DATASET_BUCKET=${MY_DATASET_BUCKET:?}
+
+# Which docker-compose file to use, probably this is fine
+MY_COMPOSE_FILE=${MY_COMPOSE_FILE:?}
+
+# EXPORT_DIR=${EXPORT_DIR:?}
+# PGDATA_DIR=${PGDATA_PARENT:?}/${PGDATA_SUBDIR:?}
+" > env-for-TLDR
+
+# Set up environment variables used to set TARDIS environment
+echo "
+EXPORT_DIR=${EXPORT_DIR:?}
+INTERNAL_EXPORT_DIR='${INTERNAL_EXPORT_DIR:?}'
+
+PGDATA_PARENT=${PGDATA_PARENT:?}
+IMAGE_POSTGRES='${IMAGE_POSTGRES:?}'
+TAG_POSTGRES=${TAG_POSTGRES:?}
+CONTAINER_POSTGRES='${CONTAINER_POSTGRES:?}'
+
+IMAGE_GALAXY_INIT='${IMAGE_GALAXY_INIT:?}'
+CONTAINER_GALAXY_INIT='${CONTAINER_GALAXY_INIT:?}'
+TAG_GALAXY='${TAG_GALAXY:?}'
+" > tardis/tags-for-tardis_envar-to-source.sh
+
+echo "
+# S3 bucket to hold files (i.e., Galaxy datasets)
+#    If the Galaxy instance is using an S3 or Swift object store, this
+#    should be the name of the same bucket as is used for the object store.
+FILE_BUCKET=${MY_DATASET_BUCKET:?}
+# S3 bucket used to back up Galaxy configuration
+CONFIG_BUCKET=${MY_CONFIG_BUCKET:?}
+" > tardis/s3/dest.config
+
+# Set up tag variables for docker-compose
+echo "
+TAG=${TAG_DEFAULT:?}
+TAG_POSTGRES=${TAG_POSTGRES:?}
+TAG_PROFTPD=${TAG_PROFTPD:?}
+
+# postgres password - If the postgres listener is not exposed outside docker 
+#    containers, there should be little risk in exposing the password here.
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?}
+" > tags-for-compose-to-source.sh
+
+# Set up environment .env docker-compose
+echo "
+EXPORT_DIR=${EXPORT_DIR:?}
+PGDATA_PARENT=${PGDATA_PARENT:?}
+PGDATA_DIR=${PGDATA_PARENT:?}/${PGDATA_SUBDIR:?}
+
+# Forward ports into namespace
+#  The galaxy-web container forwards port 8080 inside the namespace to port 80 inside the container.
+#  Therefore, rootlessctl must forward to port 8080 inside the namespace.
+#  There should be one line per port-forward - source_net:external_port:internal_port/tcp_or_udp
+export NET_ADD='${NET_ADD:?}'
+
+# Remove ports forwarded into namespace
+# one line per port-removal - this is a sed program extracting IDs from the following output
+#     $ rootlessctl.sh list-ports
+#     ID    PROTO    PARENTIP    PARENTPORT    CHILDPORT
+#     3     tcp      0.0.0.0     8080          8080
+#rootlessctl.sh list-ports | sed -n -e "'"$NET_REMOVE"'" | xargs rootlessctl.sh remove-ports
+export NET_REMOVE='${NET_REMOVE:?}'
+
+export CONTAINERS_TO_RUN='${CONTAINERS_TO_RUN:?}'
+
+export COMPOSE_FILE=${MY_COMPOSE_FILE:?}
+
+${EXTRA_GALAXY_ENVARS:?}
+" > env-for-compose-to-source.sh
+
+echo "
+# This file is setting up a composed Galaxy instance with support
+# for submitting SLURM.
+# Docker compose will use parameters specified in an '.env' file
+# next to the docker-compose.yml file.
+# We recommend to symlink this file and play around with different
+# Galaxy deployments.
+# ln -sf .env_slurm .env
+
+TAG=${TAG_DEFAULT:?}
+EXPORT_DIR=${EXPORT_DIR:?}
+PGDATA_PARENT=${PGDATA_PARENT:?}
+PGDATA_DIR=${PGDATA_PARENT:?}/${PGDATA_SUBDIR:?}
+
+${EXTRA_GALAXY_ENVARS:?}
+
+" > dot_env_for_compose

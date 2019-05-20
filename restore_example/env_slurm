@@ -1,0 +1,41 @@
+# This file is setting up a composed Galaxy instance with support
+# for submitting SLURM.
+# Docker compose will use parameters specified in an `.env` file
+# next to the docker-compose.yml file.
+# We recommend to symlink this file and play around with different
+# Galaxy deployments.
+# ln -sf .env_slurm .env
+
+TAG=19.01
+
+# default destination is our SLURM cluster
+GALAXY_DESTINATIONS_DEFAULT=slurm_cluster
+
+GALAXY_RUNNERS_ENABLE_SLURM=True
+
+# disable Docker support for HT-Condor
+GALAXY_DOCKER_ENABLED=false
+
+GALAXY_CONFIG_CLEANUP_JOB=onsuccess
+GALAXY_PORT=8080
+
+# postgres password - If the postgres listener is not exposed outside docker 
+#    containers, there should be little risk in exposing the password here.
+POSTGRES_PASSWORD=sasquatchsmallheadbuffer
+
+# Galaxy default-admin
+#   TBD - what happens when you change the user's password through the web UI?
+GALAXY_DEFAULT_ADMIN_USER=admin
+GALAXY_DEFAULT_ADMIN_EMAIL=admin@galaxy.org
+GALAXY_DEFAULT_ADMIN_PASSWORD=sasquatchsmallheadbuffer
+GALAXY_DEFAULT_ADMIN_KEY=admin
+# galaxy.yml config-file sustitutions
+#   These can be overridden in galaxy.yml, but why would you do that?
+GALAXY_CONFIG_ADMIN_USERS=admin@galaxy.org,esch0041@umn.edu,eslerm@umn.edu
+GALAXY_CONFIG_MASTER_API_KEY=HSNiugRFvgT574F43jZ7N9F3
+GALAXY_CONFIG_DATABASE_AUTO_MIGRATE=false
+GALAXY_CONFIG_TOOL_CONFIG_FILE=config/tool_conf.xml.sample,config/shed_tool_conf.xml
+
+
+# Get all the rabbits in the same queue
+RABBITMQ_DEFAULT_PASS=vaiJa3ieghai2ief0jao
