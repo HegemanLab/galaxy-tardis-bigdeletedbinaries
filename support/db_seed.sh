@@ -25,12 +25,13 @@ echo "EXPORT_DIR         = ${EXPORT_DIR:?}"
 echo "HOST_EXPORT_DIR    = ${HOST_EXPORT_DIR:?}"
 echo "PGDATA             = ${PGDATA}"
 echo "PGDATA_PARENT      = ${PGDATA_PARENT:?}"
+echo "PGDATA_SUBDIR      = ${PGDATA_SUBDIR:?}"
 echo "HOST_PGDATA_PARENT = ${HOST_PGDATA_PARENT:?}"
 echo "TAG_POSTGRES       = ${TAG_POSTGRES:?}"
 echo "IMAGE_POSTGRES     = ${IMAGE_POSTGRES:?}"
 echo "last_postgres      = ${last_postgres}"
 
-PG_RUN="-v ${HOST_PGDATA_PARENT}/main/:${PGDATA} -v ${HOST_EXPORT_DIR}:/export --rm ${IMAGE_POSTGRES}:${TAG_POSTGRES}"
+PG_RUN="-v ${HOST_PGDATA_PARENT}/${PGDATA_SUBDIR}/:${PGDATA} -v ${HOST_EXPORT_DIR}:/export --rm ${IMAGE_POSTGRES}:${TAG_POSTGRES}"
 
 set -x
 set -e
@@ -75,25 +76,24 @@ if [ ! -f ${EXPORT_DIR}/dumpall/pg_dumpall.sql ]; then
 fi
 grep pg_dumpall.sql ${EXPORT_DIR}/dumpall/CVS/Entries
 
-
-# only attempt to backup main when main exists
+# only attempt to backup ${PGDATA_SUBDIR} when ${PGDATA_SUBDIR} exists
 OLD_MAIN=""
-test -d $PGDATA_PARENT/main
+test -d $PGDATA_PARENT/${PGDATA_SUBDIR}
 if [ $# -ne 0 ]; then
   # abort when PostgreSQL appears to be running
-  if [ -f $PGDATA_PARENT/main/postmaster.pid ]; then
+  if [ -f $PGDATA_PARENT/${PGDATA_SUBDIR}/postmaster.pid ]; then
     echo "Aborting $0: PostgreSQL database is running."
     exit 1
   fi
-  # move main to main.datetime for safekeeping
-  OLD_MAIN=main.$(date -Iseconds)
-  echo now moving $PGDATA_PARENT/main to $PGDATA_PARENT/${OLD_MAIN}
-  mv $PGDATA_PARENT/main $PGDATA_PARENT/${OLD_MAIN}
+  # move ${PGDATA_SUBDIR} to ${PGDATA_SUBDIR}.datetime for safekeeping
+  OLD_MAIN=${PGDATA_SUBDIR}.$(date -Iseconds)
+  echo now moving $PGDATA_PARENT/${PGDATA_SUBDIR} to $PGDATA_PARENT/${OLD_MAIN}
+  mv $PGDATA_PARENT/${PGDATA_SUBDIR} $PGDATA_PARENT/${OLD_MAIN}
 fi
 
-# Make an empty main directory with the correct permissions
-mkdir $PGDATA_PARENT/main
-chown postgres $PGDATA_PARENT/main
+# Make an empty ${PGDATA_SUBDIR} directory with the correct permissions
+mkdir $PGDATA_PARENT/${PGDATA_SUBDIR}
+chown postgres $PGDATA_PARENT/${PGDATA_SUBDIR}
 
 # As postgres, init PostgreSQL db
 docker run -u postgres ${PG_RUN} bash -c '

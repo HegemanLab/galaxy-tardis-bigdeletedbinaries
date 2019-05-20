@@ -38,17 +38,18 @@ Usage:
   tardis bash                  - Enter a bash shell, if applicable.
 
 Optional environment variables:
-  PGDATA (default "/var/lib/postgresql/data") - path to database in "galaxy-postgres"
-    - Optional, used by "backup" and "seed_database"
   EXPORT_DIR (default "/export") - path to directory containing "galaxy-central"
     - Optional, used by most tasks
+  PGDATA (default "/var/lib/postgresql/data") - internal path to database in "galaxy-postgres"
+    - Optional, used by "backup" and "seed_database"
+  PGDATA_SUBDIR (default "main") - name of subdirectory of PGDATA_PARENT where PostgreSQL database lives
 
 Required environment Variables (set using the "-e" option of the "docker run")
   These are the environment variables and the tasks that require them:
     HOST_EXPORT_DIR - host path to the EXPORT_DIR as bind-mounted in docker
       - Used by "seed database"
-    HOST_PGDATA_PARENT - host directory whose "main" subdirectory is bind-mounted
-        by the "galaxy-postgres" container to the path specified by PGDATA
+    HOST_PGDATA_PARENT - host directory whose PGDATA_SUBDIR subdirectory is
+        bind-mounted by the "galaxy-postgres" container to the path specified by PGDATA
       - Used by "seed database"
     PGDATA_PARENT - bind-mount within "tardis" for HOST_PGDATA_PARENT
       - Used by "seed database"

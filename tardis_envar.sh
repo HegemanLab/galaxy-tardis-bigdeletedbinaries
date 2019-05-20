@@ -1,3 +1,5 @@
+#!/bin/bash source this file - do not execute it
+
 # set the actual script directory per https://stackoverflow.com/a/246128
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -35,9 +37,9 @@ if [ -z "${TAG_POSTGRES:?}" ]; then
 fi
 
 if [ ! -f $DIR/s3/dest.s3cfg ]; then
-  echo "$0 ERROR: $DIR/s3/dest.s3cfg does not exist or is not a file"
+  echo "ERROR: $DIR/s3/dest.s3cfg does not exist or is not a file"
 elif [ ! -f $DIR/s3/dest.config ]; then
-  echo "$0 ERROR: $DIR/s3/dest.config does not exist or is not a file"
+  echo "ERROR: $DIR/s3/dest.config does not exist or is not a file"
 else
   TARDIS="docker run --rm -ti \
     -v ${XDG_RUNTIME_DIR:?}/docker.sock:/var/run/docker.sock \
@@ -49,6 +51,7 @@ else
     -v ${PGDATA_PARENT:?}:/pgparent \
     -e PGDATA_PARENT=/pgparent \
     -e HOST_PGDATA_PARENT=${PGDATA_PARENT:?} \
+    -e PGDATA_SUBDIR=${PGDATA_SUBDIR:-main} \
     -e TAG_POSTGRES=${TAG_POSTGRES:?} \
     -e IMAGE_POSTGRES=${IMAGE_POSTGRES:?} \
     -e CONTAINER_POSTGRES=${CONTAINER_POSTGRES:?} \
