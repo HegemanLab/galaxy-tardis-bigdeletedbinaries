@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Shell function definitions
 usage() {
   echo "usage: $0               Start suite after starting database"
   echo "       $0 --init-only   Initialize database only"
@@ -18,21 +19,25 @@ swab_orphans() {
   done
 }
 
+# Extract command-line options
 INIT_ONLY=false
 NO_INIT_DB=false
 UPGRADE_DB=false
 if [ ! -z "$1" ]; then
   RESTORE_DATABASE=false
-  for arg in $@; do
+  for arg in "$@"; do
     if [ ${arg:0:2} == "--" ]; then
       case "${arg:2}" in
         init-only)
+          echo "Only initializing Galaxy"
           INIT_ONLY=true
           ;;
         no-init-db)
+          echo "Not initializing PostgreSQL database"
           NO_INIT_DB=true
           ;;
         upgrade-db)
+          echo "Upgrading PostgreSQL database to match Galaxy version"
           UPGRADE_DB=true
           ;;
         help)
@@ -48,6 +53,13 @@ if [ ! -z "$1" ]; then
     fi
   done
 fi
+# Sanity checks
+if [ "$NO_INIT_DB" == "true" -a "$UPGRADE_DB" == "true" ]; then
+  echo "Incompatible options --no-init-db and --upgrade-db"
+  exit 1
+fi
+#TODO remove next line
+echo INIT_ONLY=$INIT_ONLY NO_INIT_DB=$NO_INIT_DB UPGRADE_DB=$UPGRADE_DB
 
 # Set the actual script directory per https://stackoverflow.com/a/246128
 SOURCE="${BASH_SOURCE[0]}"
@@ -75,9 +87,8 @@ source env-for-compose-to-source.sh
 # Get tags produced by build-orchestration-images.sh
 source tags-for-compose-to-source.sh
 
-printenv | sort
-
-set -x
+# TODO remove next line
+#set -x
 
 docker-compose -f ${COMPOSE_FILE:?} ps >/dev/null || {
   echo "
@@ -89,13 +100,6 @@ docker-compose -f ${COMPOSE_FILE:?} ps >/dev/null || {
   exit 1
 }
 
-rootlesskit --disable-host-loopback bash -c "
-  if [ -f ${PGDATA_DIR:?}/PG_VERSION ]; then
-    echo PG_VERSION found
-  else
-    echo PG_VERSION not found
-  fi
-"
 docker-compose -f $COMPOSE_FILE ps | grep galaxy-postgres && {
   echo "
     Please do not run $0 without stopping the 'galaxy-postgres' service.
@@ -114,7 +118,15 @@ fi
 
 docker-compose -f $COMPOSE_FILE run --rm galaxy-init /bin/bash -c "export DISABLE_SLEEPLOCK=yes; /usr/bin/startup"
 
-if [ "$NO_INIT_DB" != "true" ]; then
+if [ "NO_INITDB_$NO_INIT_DB" == "NO_INITDB_false" ]; then
+  echo "Initializing database if it does not exist"  # TODO remove
+  rootlesskit --disable-host-loopback bash -c "
+    if [ -f ${PGDATA_DIR:?}/PG_VERSION ]; then
+      echo PG_VERSION found
+    else
+      echo PG_VERSION not found
+    fi
+  "
   # Init the db if its directory does not exist or is not initialized
   ( rootlesskit --disable-host-loopback test -f ${PGDATA_DIR:?}/PG_VERSION ) || {
 
@@ -149,14 +161,11 @@ if [ "$UPGRADE_DB" == "true" ]; then
   # set TARDIS environment variable
   source tardis/tardis_envar.sh
   # upgrade database
-  printenv | sort
-  echo "***** Database upgrade *****"
-  # tail -f ~/.vimrc
-  # echo "***** Database upgrade *****"
-  # exit 99
+  echo "***** Database upgrade - begin *****"
   docker-compose -f $COMPOSE_FILE up -d galaxy-postgres galaxy-web
   $TARDIS upgrade_database
   docker-compose -f $COMPOSE_FILE down --remove-orphans
+  echo "***** Database upgrade - complete *****"
   # upgrade database end
   swab_orphans
 fi
@@ -174,19 +183,11 @@ if [ "$INIT_ONLY" != "true" ]; then
   ${ROOTLESSCTL_SH_DIR}/rootlessctl.sh list-ports
   echo 'Forward ports into namespace, as specified in env-for-compose-to-source.sh - END'
 
-  #printenv | sort
-  #echo "***** Start suite *****"
-  # tail -f ~/.vimrc
-  # echo "***** Start suite *****"
-  # exit 99
-
   echo '######### compose_start: Starting the galaxy-compose suite ########'
   # Start the container-services
   # docker-compose up galaxy-postgres galaxy-slurm galaxy-web galaxy-proftpd rabbitmq galaxy-init grafana
   # export CONTAINERS_TO_RUN='galaxy-postgres galaxy-slurm galaxy-web galaxy-proftpd rabbitmq galaxy-init grafana'
   docker-compose -f $COMPOSE_FILE up $CONTAINERS_TO_RUN
-  echo $COMPOS_FILE up interrupted
+  echo $COMPOSE_FILE up interrupted
 fi
 if [ -f $STOPPING ]; then exit 0; fi
-# echo "Initialization done.  Press control-C to continue." > $STOPPING
-# tail -f $STOPPING

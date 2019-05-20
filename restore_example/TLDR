@@ -1,5 +1,6 @@
 #!/bin/bash
-# step 1: Copy setup_env.example to setup_env.custom (or whatever you choose)
+# step 0: `pushd tardis; bash build_notar.sh; popd`
+# step 1: `cp setup_env.example setup_env.custom` # or choose another name
 # step 2: Edit setup_env.custom as appropriate for your installation
 # step 3: `bash setup_env.custom`, which generates
 #           ./env-for-TLDR, ./tardis/s3/dest.config,
@@ -21,7 +22,7 @@ MY_S3CFG            : ${MY_S3CFG:?}
 MY_CONFIG           : ${MY_CONFIG_BUCKET:?}
 MY_DATASETS         : ${MY_DATASET_BUCKET:?}
 MY_COMPOSE_FILE     : ${MY_COMPOSE_FILE:?}
-ls -l tardis/s3/dest.s3cfg tardis/s3/dest.config 
+ls -l tardis/s3/dest.s3cfg tardis/s3/dest.config
 "
 ln -s -f dot_env_for_compose .env > /dev/null
 ROODO='rootlesskit --disable-host-loopback'
@@ -32,21 +33,38 @@ $ROODO mkdir -p        ${MY_GALAXY_EXPORT:?}/pgadmin
 $ROODO chown 1000:50   ${MY_GALAXY_EXPORT:?}/pgadmin/
 $ROODO chown 999:1550  ${MY_GALAXY_POSTGRES:?}
 $ROODO chmod 775       ${MY_GALAXY_POSTGRES:?}
-if [ ! -d ${MY_GALAXY_POSTGRES:?}/main ]; then
-  $ROODO mkdir -p ${MY_GALAXY_POSTGRES:?}//main
-fi
-$ROODO chown 999:1550  ${MY_GALAXY_POSTGRES:?}/main/
-$ROODO chmod 775       ${MY_GALAXY_POSTGRES:?}/main/
 
-# # Comment this out after the first pull if you don't want images to update each time you run this
+# Action to terminate script
+TERM_ACTION="./compose_stop.sh; sleep 2; swab_orphans; exit 1"
+# Catch request to stop
+trap "echo TERM caught; ${TERM_ACTION}" TERM
+# Catch control-C
+trap "echo INT caught; ${TERM_ACTION}" INT
+# Support the action taken to terminate script
+swab_orphans() {
+  # find and destroy exited containers
+  for c in $(docker ps -a --filter="status=exited" -q); do
+    docker rm $c
+  done
+  # find and destroy orphaned volumes
+  for v in $(docker volume ls -q -f 'dangling=true'); do
+    docker volume rm $v
+  done
+}
+
+# # If you don't want images to update each time you run this,
+#     comment out the next line after the first pull:
 docker-compose -f ${MY_COMPOSE_FILE:?} pull
 
-if [ "${RESTORE_GALAXY:?}" == "false" ]; then
+if [ "RESTORE_GALAXY_${RESTORE_GALAXY:?}" == "RESTORE_GALAXY_false" ]; then
+  echo "#*#*#*#*#*#*#*#  Initializing a fresh instance of Galaxy  #*#*#*#*#*#*#*#"
   # Initialize Galaxy and upgrade the database to match the inited Galaxy's version
   ./compose_start.sh --init-only --upgrade-db
 else
+  echo "#*#*#*#*#*#*#*#  Restoring an instance of Galaxy from S3  #*#*#*#*#*#*#*#"
   # Initialize Galaxy export and database - this kills itself after circa 5 minutes
   ./compose_start.sh --init-only --no-init-db
+  echo "#*#*#*#*#*#*#*#  Fetching and applying Galaxy configuration from S3  #*#*#*#*#*#*#*#"
   # Restore Galaxy ... adjust as needed, e.g., use --Miniconda3 when Galaxy uses python3
   ./compose_restore.sh --Miniconda2 --retrieve_config --apply_config --datasets --database
   # Be sure tool_conf.xml exists, owned by Galaxy
@@ -54,10 +72,12 @@ else
     $ROODO cp ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml.main ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml
     $ROODO chown 1450:1450 ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml
   fi
+  echo "#*#*#*#*#*#*#*#  Upgrading Galaxy PostgreSQL database  #*#*#*#*#*#*#*#"
   # Upgrade the database to match the inited Galaxy's version
   ./compose_start.sh --init-only --upgrade-db
 fi
 
+echo "#*#*#*#*#*#*#*#  Starting Galaxy  #*#*#*#*#*#*#*#"
 # Start Galaxy - kill by pressing control-C only ONCE for a clean shutdown.
 ./compose_start.sh # or, if screen is installed:
 # screen -S ${MY_INSTANCE:?} ./compose_start.sh        # Start composition in foreground
