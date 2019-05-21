@@ -67,6 +67,10 @@ else
   echo "#*#*#*#*#*#*#*#  Fetching and applying Galaxy configuration from S3  #*#*#*#*#*#*#*#"
   # Restore Galaxy ... adjust as needed, e.g., use --Miniconda3 when Galaxy uses python3
   ./compose_restore.sh --Miniconda2 --retrieve_config --apply_config --datasets --database
+  if [ $? -ne 0 ]; then
+    echo "FATAL: compose_restore.sh failed - aborting TLDR"
+    exit 1
+  fi
   # Be sure tool_conf.xml exists, owned by Galaxy
   if [ ! -f ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml ]; then
     $ROODO cp ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml.main ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml

@@ -116,6 +116,11 @@ pushd tardis
 popd # undo `pushd tardis`
 DIR=$SAVE_DIR
 
+if [ -z "$TARDIS" ]; then
+  echo "FATAL - The TARDIS environment variable was not set; review tardis_envar.sh to see what variables you might need to set."
+  exit 1
+fi
+
 # set INTERNAL_EXPORT_ROOT to the path to export inside the docker container
 echo export $(cat tardis/tags-for-tardis_envar-to-source.sh | sed -n -e '/EXPORT_DIR/ {s/^/INTERNAL_/; p}')
 export $(cat tardis/tags-for-tardis_envar-to-source.sh | sed -n -e '/EXPORT_DIR/ {s/^/INTERNAL_/; p}')
