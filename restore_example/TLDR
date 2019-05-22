@@ -59,11 +59,11 @@ docker-compose -f ${MY_COMPOSE_FILE:?} pull
 if [ "RESTORE_GALAXY_${RESTORE_GALAXY:?}" == "RESTORE_GALAXY_false" ]; then
   echo "#*#*#*#*#*#*#*#  Initializing a fresh instance of Galaxy  #*#*#*#*#*#*#*#"
   # Initialize Galaxy and upgrade the database to match the inited Galaxy's version
-  ./compose_start.sh --init-only --upgrade-db
+  ./compose_start.sh --init-only --init-db --upgrade-db
 else
   echo "#*#*#*#*#*#*#*#  Restoring an instance of Galaxy from S3  #*#*#*#*#*#*#*#"
   # Initialize Galaxy export and database - this kills itself after circa 5 minutes
-  ./compose_start.sh --init-only --no-init-db
+  ./compose_start.sh --init-only
   echo "#*#*#*#*#*#*#*#  Fetching and applying Galaxy configuration from S3  #*#*#*#*#*#*#*#"
   # Restore Galaxy ... adjust as needed, e.g., use --Miniconda3 when Galaxy uses python3
   ./compose_restore.sh --Miniconda2 --retrieve_config --apply_config --datasets --database

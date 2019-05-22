@@ -2,10 +2,10 @@
 
 # Shell function definitions
 usage() {
-  echo "usage: $0               Start suite after starting database"
-  echo "       $0 --init-only   Initialize database only"
-  echo "       $0 --no-init-db  Do not initialize database"
-  echo "       $0 --upgrade-db  Upgrade previously initialized database"
+  echo "usage: $0               Start suite, initializing database and export-directory as needed."
+  echo "       $0 --init-only   Do not run Galaxy after initializing export-directory and perhaps database."
+  echo "       $0 --init-db     Initialize PostgreSQL database if needed."
+  echo "       $0 --upgrade-db  Upgrade initialized or existing PostgreSQL database to match Galaxy."
 }
 
 swab_orphans() {
@@ -21,7 +21,7 @@ swab_orphans() {
 
 # Extract command-line options
 INIT_ONLY=false
-NO_INIT_DB=false
+INIT_DB=false
 UPGRADE_DB=false
 if [ ! -z "$1" ]; then
   RESTORE_DATABASE=false
@@ -29,12 +29,12 @@ if [ ! -z "$1" ]; then
     if [ ${arg:0:2} == "--" ]; then
       case "${arg:2}" in
         init-only)
-          echo "Only initializing Galaxy"
+          echo "Initializing Galaxy export without running Galaxy"
           INIT_ONLY=true
           ;;
-        no-init-db)
+        init-db)
           echo "Not initializing PostgreSQL database"
-          NO_INIT_DB=true
+          INIT_DB=true
           ;;
         upgrade-db)
           echo "Upgrading PostgreSQL database to match Galaxy version"
@@ -54,12 +54,8 @@ if [ ! -z "$1" ]; then
   done
 fi
 # Sanity checks
-if [ "$NO_INIT_DB" == "true" -a "$UPGRADE_DB" == "true" ]; then
-  echo "Incompatible options --no-init-db and --upgrade-db"
-  exit 1
-fi
 #TODO remove next line
-echo INIT_ONLY=$INIT_ONLY NO_INIT_DB=$NO_INIT_DB UPGRADE_DB=$UPGRADE_DB
+echo INIT_ONLY=$INIT_ONLY INIT_DB=$INIT_DB UPGRADE_DB=$UPGRADE_DB
 
 # Set the actual script directory per https://stackoverflow.com/a/246128
 SOURCE="${BASH_SOURCE[0]}"
@@ -86,9 +82,6 @@ source env-for-compose-to-source.sh
 
 # Get tags produced by build-orchestration-images.sh
 source tags-for-compose-to-source.sh
-
-# TODO remove next line
-#set -x
 
 docker-compose -f ${COMPOSE_FILE:?} ps >/dev/null || {
   echo "
@@ -118,7 +111,7 @@ fi
 
 docker-compose -f $COMPOSE_FILE run --rm galaxy-init /bin/bash -c "export DISABLE_SLEEPLOCK=yes; /usr/bin/startup"
 
-if [ "NO_INITDB_$NO_INIT_DB" == "NO_INITDB_false" ]; then
+if [ "INIT_DB_$INIT_DB" == "INIT_DB_true" ]; then
   echo "Initializing database if it does not exist"  # TODO remove
   rootlesskit --disable-host-loopback bash -c "
     if [ -f ${PGDATA_DIR:?}/PG_VERSION ]; then
