@@ -5,7 +5,7 @@ usage() {
   echo "  $0 --retrieve_config        Retrieve config data"
   echo "  $0 --apply_config ['date']  Apply retrieved config data"
   echo "  $0 --datasets               Restore ALL dataset file (not necessary when using Galaxy object store)"
-  echo "  $0 --db_upgrade             Restore PostgreSQL database (this makes database changes since last backup unavailable)"
+  echo "  $0 --db_upgrade             Upgrade PostgreSQL to match installed Galaxy version"
   echo "  $0 --database ['date']      Restore PostgreSQL database (this makes database changes since last backup unavailable)"
   echo "        'date' can be used to specify the newest backup can be applied, i.e., exclude backups newer than the date"
   echo "        'date' can be any format accepted by the Linxx 'date' program (https://linux.die.net/man/1/date),"
@@ -35,24 +35,31 @@ for arg in "$@"; do
   if [ ${arg:0:2} == "--" ]; then
    case "${arg:2}" in
       Miniconda3)
+        echo "  Upgrade /export/_conda to the latest Miniconda3 version. (experimental, requires lynx)"
         UPGRADE_MINICONDA3=true
         ;;
       Miniconda2)
+        echo "  Upgrade /export/_conda to the latest Miniconda2 version. (experimental, requires lynx)"
         UPGRADE_MINICONDA2=true
         ;;
       db_upgrade)
+        echo "  Restore PostgreSQL database (this makes database changes since last backup unavailable)"
         UPGRADE_DATABASE=true
         ;;
       database)
+        echo "  Restore PostgreSQL database (this makes database changes since last backup unavailable)"
         RESTORE_DATABASE=true
         ;;
       datasets)
+        echo "  Restore ALL dataset file (not necessary when using Galaxy object store)"
         RESTORE_DATASETS=true
         ;;
       retrieve_config)
+        echo "  Retrieve config data"
         RETRIEVE_CONFIG=true
         ;;
       apply_config)
+        echo "  Apply retrieved config data"
         APPLY_CONFIG=true
         ;;
       help)
@@ -74,6 +81,7 @@ for arg in "$@"; do
       exit 1
     }
     last_postgres="${arg}"
+    echo "    Database rollback date to $my_date"
   elif [ "${last_arg}" == "--apply_config"  ]; then
     date -Iseconds --date="${arg}"
     my_date=$( date -Iseconds --date="${arg}" ) || {
@@ -83,6 +91,7 @@ for arg in "$@"; do
       exit 1
     }
     last_config="${arg}"
+    echo "    Configuration rollback date to $my_date"
   else
     echo "Unrecognized option '${arg}'"
     usage
@@ -91,6 +100,15 @@ for arg in "$@"; do
   last_arg="${arg}"
 done
 
+echo "
+APPLY_CONFIG=$APPLY_CONFIG
+RETRIEVE_CONFIG=$RETRIEVE_CONFIG
+RESTORE_DATASETS=$RESTORE_DATASETS
+RESTORE_DATABASE=$RESTORE_DATABASE
+UPGRADE_DATABASE=$UPGRADE_DATABASE
+UPGRADE_MINICONDA3=$UPGRADE_MINICONDA3
+UPGRADE_MINICONDA2=$UPGRADE_MINICONDA2
+"
 # Set the actual script directory per https://stackoverflow.com/a/246128
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -187,15 +205,14 @@ else
   echo skipping configuration retrieval
 fi
 
-if [ ! -d $EXPORT_DIR/backup/config ]; then
-  echo "WARNING configuration retrieval failed or skipped - $EXPORT_DIR/backup/config not found"
-  exit 1
-fi
-
 ### Apply previously-retrieved data for export/config ###
 
 SUCCESS=YES
 if [ "$APPLY_CONFIG" != "false" ]; then
+  if [ ! -d $EXPORT_DIR/backup/config ]; then
+    echo "WARNING missing backup - $EXPORT_DIR/backup/config not found"
+    exit 1
+  fi
   ($TARDIS apply_config "${last_config}" && echo configuration application succeeded) || SUCCESS=NO
   if [ "$SUCCESS" == "NO" ]; then
     echo "Configuration application did not succeed"
@@ -210,24 +227,31 @@ fi
 SUCCESS=YES
 if [ "$RESTORE_DATASETS" != "false" ]; then
   ($TARDIS restore_files && echo dataset-file restoration succeeded) || SUCCESS=NO
+  if [ "$SUCCESS" == "NO" ]; then
+    echo Dataset-file restoration failed or skipped
+    exit 1
+  fi
 else
   echo skipping dataset-file restoration
-fi
-
-if [ "$SUCCESS" == "NO" ]; then
-  echo dataset-file restoration failed or skipped
-  exit 1
 fi
 
 ### Apply previously-retrieved database data ###
 
 if [ "$RESTORE_DATABASE" != "false" ]; then
   ($TARDIS seed_database "${last_postgres}" && echo dataset-file restoration succeeded) || SUCCESS=NO
+  if [ "$SUCCESS" == "NO" ]; then
+    echo Database restoration failed or skipped
+    exit 1
+  fi
 fi
 
 # sh manage_db.sh upgrade
 if [ "$UPGRADE_DATABASE" != "false" ]; then
   ($TARDIS upgrade_database && echo dataset-file restoration succeeded) || SUCCESS=NO
+  if [ "$SUCCESS" == "NO" ]; then
+    echo Database upgrade failed or skipped
+    exit 1
+  fi
 fi
 
 popd  # undo `pushd $DIR`
