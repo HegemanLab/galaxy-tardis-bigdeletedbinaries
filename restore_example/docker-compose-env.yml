@@ -282,7 +282,7 @@ services:
         - GALAXY_CONFIG_TOOL_DATA_TABLE_CONFIG_PATH=/etc/galaxy/tool_data_table_conf.xml
         # Configurate admin and master api key. Can be overridden in galaxy.yml
         - GALAXY_CONFIG_ADMIN_USERS=${GALAXY_CONFIG_ADMIN_USERS:-admin@galaxy.org}
-        - GALAXY_CONFIG_MASTER_API_KEY=${GALAXY_CONFIG_MASTER_API_KEY:-HSNiugRFvgT574F43jZ7N9F3}
+        # If you really want to set GALAXY_CONFIG_MASTER_API_KEY, please do that in the .env file rather than here
         - GALAXY_CONFIG_DATABASE_AUTO_MIGRATE=${GALAXY_CONFIG_DATABASE_AUTO_MIGRATE:-false}
         - GALAXY_CONFIG_AMQP_INTERNAL_CONNECTION=amqp://galaxy:${RABBITMQ_DEFAULT_PASS:-vaiJa3ieghai2ief0jao}@rabbitmq/galaxy
         # Condor
@@ -290,9 +290,10 @@ services:
         - GALAXY_RUNNERS_ENABLE_CONDOR=${GALAXY_RUNNERS_ENABLE_CONDOR:-False}
         - GALAXY_RUNNERS_ENABLE_SLURM=${GALAXY_RUNNERS_ENABLE_SLURM:-False}
         - GALAXY_RUNNERS_ENABLE_K8=${GALAXY_RUNNERS_ENABLE_K8:-False}
-        - ENABLE_CONDOR=true
-        - CONDOR_HOST=galaxy-htcondor
+        - ENABLE_CONDOR=${ENABLE_CONDOR:-false}
+        - CONDOR_HOST=${CONDOR_HOST:-galaxy-htcondor}
         - GALAXY_CONDOR_UNIVERSE=vanilla
+        # Docker (i.e., support Galaxy interactive enviroments)
         - GALAXY_DOCKER_ENABLED=${GALAXY_DOCKER_ENABLED:-False}
         - GALAXY_CONFIG_CLEANUP_JOB=${GALAXY_CONFIG_CLEANUP_JOB:-onsuccess}
         - GALAXY_CONFIG_ENABLE_BETA_MULLED_CONTAINERS=${GALAXY_CONFIG_ENABLE_BETA_MULLED_CONTAINERS:-False}

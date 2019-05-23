@@ -12,7 +12,7 @@
 # get required environment variables
 . env-for-TLDR
 echo "
-RESTORE_GALAXY      : ${RESTORE_GALAXY:?}
+TLDR_RUN_MODE       : ${TLDR_RUN_MODE:?}
 MY_INSTANCE         : ${MY_INSTANCE:?}
 MY_BUCKET_PREFIX    : ${MY_BUCKET_PREFIX:?}
 MY_GALAXY_POSTGRES  : ${MY_GALAXY_POSTGRES:?}
@@ -56,29 +56,49 @@ swab_orphans() {
 #     comment out the next line after the first pull:
 docker-compose -f ${MY_COMPOSE_FILE:?} pull
 
-if [ "RESTORE_GALAXY_${RESTORE_GALAXY:?}" == "RESTORE_GALAXY_false" ]; then
-  echo "#*#*#*#*#*#*#*#  Initializing a fresh instance of Galaxy  #*#*#*#*#*#*#*#"
-  # Initialize Galaxy and upgrade the database to match the inited Galaxy's version
-  ./compose_start.sh --init-only --init-db --upgrade-db
-else
-  echo "#*#*#*#*#*#*#*#  Restoring an instance of Galaxy from S3  #*#*#*#*#*#*#*#"
-  # Initialize Galaxy export and database - this kills itself after circa 5 minutes
-  ./compose_start.sh --init-only
-  echo "#*#*#*#*#*#*#*#  Fetching and applying Galaxy configuration from S3  #*#*#*#*#*#*#*#"
-  # Restore Galaxy ... adjust as needed, e.g., use --Miniconda3 when Galaxy uses python3
-  ./compose_restore.sh --Miniconda2 --retrieve_config --apply_config --datasets --database
-  if [ $? -ne 0 ]; then
-    echo "FATAL: compose_restore.sh failed - aborting TLDR"
-    exit 1
-  fi
-  # Be sure tool_conf.xml exists, owned by Galaxy
-  if [ ! -f ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml ]; then
-    $ROODO cp ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml.main ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml
-    $ROODO chown 1450:1450 ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml
-  fi
-  echo "#*#*#*#*#*#*#*#  Upgrading Galaxy PostgreSQL database  #*#*#*#*#*#*#*#"
-  # Upgrade the database to match the inited Galaxy's version
-  ./compose_start.sh --init-only --upgrade-db
+case ${TLDR_RUN_MODE:?} in
+  run)
+    echo "#*#*#*#*#*#*#*#  Running Galaxy with neither initialization nor restoration  #*#*#*#*#*#*#*#"
+    if [ ! -f ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml ]; then
+      echo "Please run TLDR with TLDR_RUN_MODE=fresh"
+      exit 1
+    fi
+    ;;
+  fresh)
+    echo "#*#*#*#*#*#*#*#  Not restoring Galaxy, initializng fresh instance if necessary  #*#*#*#*#*#*#*#"
+    # Initialize Galaxy and upgrade the database to match the inited Galaxy's version
+    ./compose_start.sh --init-only --init-db --upgrade-db
+    # Initialize Galaxy and upgrade the database to match the inited Galaxy's version
+    ./compose_start.sh --init-only --init-db --upgrade-db
+    ;;
+  restore)
+    echo "#*#*#*#*#*#*#*#  Restoring an instance of Galaxy from S3  #*#*#*#*#*#*#*#"
+    # Initialize Galaxy export and database - this kills itself after circa 5 minutes
+    ./compose_start.sh --init-only
+    echo "#*#*#*#*#*#*#*#  Fetching and applying Galaxy configuration from S3  #*#*#*#*#*#*#*#"
+    # Run this if you would like to upgrade conda; use --Miniconda3 when Galaxy uses python3
+    ./compose_restore.sh --Miniconda2; if [ $? -ne 0 ]; then echo "FATAL: Updating conda failed - aborting TLDR"; exit 1; fi
+    # Restore Galaxy configuration
+    ./compose_restore.sh --retrieve_config --apply_config; if [ $? -ne 0 ]; then echo "FATAL: Retrieving or applying config failed - aborting TLDR"; exit 1; fi
+    # Fetch datasets from S3 backup; you won't want to do this if you are using an S3 bucket as your object store
+    ./compose_restore.sh --datasets; if [ $? -ne 0 ]; then echo "FATAL: Restoring datasets failed - aborting TLDR"; exit 1; fi
+    # Replace database schema and contents from S3 backup; once you start using Galaxy, datasets not tracked in database WILL be overwritten!
+    ./compose_restore.sh --database; if [ $? -ne 0 ]; then echo "FATAL: Restoring database failed - aborting TLDR"; exit 1; fi
+    echo "#*#*#*#*#*#*#*#  Upgrading Galaxy PostgreSQL database  #*#*#*#*#*#*#*#"
+    # Upgrade the database to match the inited Galaxy's version
+    ./compose_start.sh --init-only --upgrade-db
+    ;;
+  *)
+    echo "Unknown value ${TLDR_RUN_MODE:?} for TLDR_RUN_MODE"
+    echo "Please choose one of 'restore', 'fresh', or 'run'"
+    echo exit 1
+    ;;
+esac
+
+# Be sure tool_conf.xml exists, owned by Galaxy
+if [ ! -f ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml ]; then
+  $ROODO cp ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml.main ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml
+  $ROODO chown 1450:1450 ${MY_GALAXY_EXPORT:?}/config/tool_conf.xml
 fi
 
 echo "#*#*#*#*#*#*#*#  Starting Galaxy  #*#*#*#*#*#*#*#"

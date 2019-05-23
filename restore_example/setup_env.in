@@ -3,7 +3,7 @@
 #   This is sourced by setup_env.example to set up environment variable files for the restoration example.
 
 echo "
-RESTORE_GALAXY=${RESTORE_GALAXY:?}
+TLDR_RUN_MODE=${TLDR_RUN_MODE:?}
 
 # Name you will use for your Galaxy instance
 #  Currently only used by 'screen' and in this file, but you use it as you want

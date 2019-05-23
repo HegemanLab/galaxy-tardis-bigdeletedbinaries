@@ -2,9 +2,11 @@
 # setup_env.example: Set up environment variable files for restoration example.
 #   Adjust or replace any or all environment variables as appropriate to your case.
 
-# Set this to "false" when you want to cleanly install Galaxy; 
-#   to "true" when you want to restore from S3-compatible buckets
-RESTORE_GALAXY=true
+# Set this to "restore" when you want TLDR to restore from S3-compatible buckets
+# Set this to "fresh" when you want TLDR to cleanly install Galaxy if it has not already been installed 
+# Set this to "run" when you want TLDR to run without initialization attempts
+TLDR_RUN_MODE=${TLDR_RUN_MODE:-run}
+
 # Name you will use for your Galaxy instance
 #  Currently only used by 'screen' and in this file, but you use it as you want
 MY_INSTANCE=myinstance
@@ -63,35 +65,9 @@ TAG_DEFAULT="$TAG_GALAXY"
 
 # Postgres password - If the postgres listener is not exposed outside docker 
 #    containers, there should be little risk in exposing the password here.
-POSTGRES_PASSWORD=chaopagoosaequuashie
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-chaopagoosaequuashie}
 
-# Galaxy-specific envar values vvvvvvvvvvvvvvvvvvvvvvvv
 GALAXY_PORT=8080
-# Galaxy default-admin
-#   TBD - what happens when you change the user's password through the web UI?
-GALAXY_DEFAULT_ADMIN_USER=admin
-GALAXY_DEFAULT_ADMIN_EMAIL=admin@galaxy.org
-GALAXY_DEFAULT_ADMIN_PASSWORD=${POSTGRES_PASSWORD}
-GALAXY_DEFAULT_ADMIN_KEY=admin
-# galaxy.yml config-file sustitutions
-#   These can be overridden in galaxy.yml, but why would you do that?
-GALAXY_CONFIG_ADMIN_USERS=admin@galaxy.org
-GALAXY_CONFIG_MASTER_API_KEY=3877E10f1e5dA8a97Pf746d3
-GALAXY_CONFIG_DATABASE_AUTO_MIGRATE=false
-GALAXY_CONFIG_TOOL_CONFIG_FILE=config/tool_conf.xml,config/shed_tool_conf.xml
-
-# disable Docker support for HT-Condor; enable it in a non HPC environment
-GALAXY_DOCKER_ENABLED=true
-GALAXY_CONFIG_CLEANUP_JOB=onsuccess
-
-GALAXY_PORT=${GALAXY_PORT}
-# default destination is our SLURM cluster (no htcondor)
-GALAXY_DESTINATIONS_DEFAULT=slurm_cluster
-GALAXY_RUNNERS_ENABLE_SLURM=True
-
-# Get all the rabbits in the same queue
-RABBITMQ_DEFAULT_PASS=runrabbitrunrunrunru
-# Galaxy-specific envar values ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 # Ports to forward outside the "rootless namespace"; 
 #   you won't need these if you are running Docker as root 
@@ -107,18 +83,12 @@ NET_REMOVE="
 # This is the compose file to run (in this directory)
 COMPOSE_FILE=${MY_COMPOSE_FILE}
 
-# These are the containers in the compose file that we intend to run - add or remove a needed
+# These are the containers in the compose file that we intend to run.
+#   Add or remove a needed, e.g., to run HT-Condor
 CONTAINERS_TO_RUN='galaxy-postgres galaxy-slurm galaxy-web galaxy-proftpd rabbitmq galaxy-init grafana pgadmin4'
 
-# Extra exported environment variables to set in the galaxy-web container
+# Extra exported environment variables to be set in the galaxy-web container
 EXTRA_GALAXY_ENVARS="
-# default destination is our SLURM cluster (no htcondor)
-GALAXY_DESTINATIONS_DEFAULT=${GALAXY_DESTINATIONS_DEFAULT}
-GALAXY_RUNNERS_ENABLE_SLURM=${GALAXY_RUNNERS_ENABLE_SLURM}
-
-# disable Docker support for HT-Condor; enable it in a non HPC environment
-GALAXY_DOCKER_ENABLED=${GALAXY_DOCKER_ENABLED}
-GALAXY_CONFIG_CLEANUP_JOB=${GALAXY_CONFIG_CLEANUP_JOB}
 GALAXY_PORT=${GALAXY_PORT}
 # postgres password - If the postgres listener is not exposed outside docker 
 #    containers, there should be little risk in exposing the password here.
@@ -126,19 +96,36 @@ POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
 # Galaxy default-admin
 #   TBD - what happens when you change the user's password through the web UI?
-GALAXY_DEFAULT_ADMIN_USER=${GALAXY_DEFAULT_ADMIN_USER}
-GALAXY_DEFAULT_ADMIN_EMAIL=${GALAXY_DEFAULT_ADMIN_EMAIL}
-GALAXY_DEFAULT_ADMIN_PASSWORD=${GALAXY_DEFAULT_ADMIN_PASSWORD}
-GALAXY_DEFAULT_ADMIN_KEY=${GALAXY_DEFAULT_ADMIN_KEY}
-# galaxy.yml config-file sustitutions
+GALAXY_DEFAULT_ADMIN_USER=${GALAXY_DEFAULT_ADMIN_USER:-admin}
+GALAXY_DEFAULT_ADMIN_EMAIL=${GALAXY_DEFAULT_ADMIN_EMAIL:-admin@galaxy.org}
+GALAXY_DEFAULT_ADMIN_PASSWORD=${GALAXY_DEFAULT_ADMIN_PASSWORD:-${POSTGRES_PASSWORD}}
+GALAXY_DEFAULT_ADMIN_KEY=${GALAXY_DEFAULT_ADMIN_KEY:-$(echo $(date -Ins | md5sum) | cut -f 1 -d ' ')}
+
+# galaxy.yml config-file sustitutions vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 #   These can be overridden in galaxy.yml, but why would you do that?
-GALAXY_CONFIG_ADMIN_USERS=${GALAXY_CONFIG_ADMIN_USERS}
-GALAXY_CONFIG_MASTER_API_KEY=${GALAXY_CONFIG_MASTER_API_KEY}
-GALAXY_CONFIG_DATABASE_AUTO_MIGRATE=${GALAXY_CONFIG_DATABASE_AUTO_MIGRATE}
-GALAXY_CONFIG_TOOL_CONFIG_FILE=${GALAXY_CONFIG_TOOL_CONFIG_FILE}
+GALAXY_CONFIG_ADMIN_USERS=${GALAXY_CONFIG_ADMIN_USERS:-admin@galaxy.org}
+  # Master key that allows many API admin actions to be used without
+  # actually having a defined admin user in the database/config.
+  # Uncomment next line only if you need to bootstrap Galaxy;
+  # you probably do not want to leave this variable set on public servers.
+#GALAXY_CONFIG_MASTER_API_KEY=${GALAXY_CONFIG_MASTER_API_KEY:-$(echo $(date -Ins | md5sum | md5sum) | cut -f 1 -d ' ')}
+GALAXY_CONFIG_DATABASE_AUTO_MIGRATE=${GALAXY_CONFIG_DATABASE_AUTO_MIGRATE:-false}
+GALAXY_CONFIG_TOOL_CONFIG_FILE=${GALAXY_CONFIG_TOOL_CONFIG_FILE:-config/tool_conf.xml,config/shed_tool_conf.xml}
+# galaxy.yml config-file sustitutions ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 # Get all the rabbits in the same queue
-RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:-runrabbitrunrabbitmq}
+
+# default destination 'slurm_cluster' is our SLURM cluster (no htcondor)
+GALAXY_DESTINATIONS_DEFAULT=${GALAXY_DESTINATIONS_DEFAULT:-slurm_cluster}
+GALAXY_RUNNERS_ENABLE_SLURM=${GALAXY_RUNNERS_ENABLE_SLURM:-True}
+
+# You will want to disable Docker support for HT-Condor; you can enable it in a non HPC environment
+GALAXY_DOCKER_ENABLED=${GALAXY_DOCKER_ENABLED:-true}
+GALAXY_CONFIG_CLEANUP_JOB=${GALAXY_CONFIG_CLEANUP_JOB:-onsuccess}
+
+ENABLE_CONDOR=${ENABLE_CONDOR:-false}
+CONDOR_HOST=${CONDOR_HOST:-galaxy-htcondor}
 "
 
 # Now generate the environment files:
