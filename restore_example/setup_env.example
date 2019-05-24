@@ -3,7 +3,7 @@
 #   Adjust or replace any or all environment variables as appropriate to your case.
 
 # Set this to "restore" when you want TLDR to restore from S3-compatible buckets
-# Set this to "fresh" when you want TLDR to cleanly install Galaxy if it has not already been installed 
+# Set this to "fresh" when you want TLDR to cleanly install Galaxy if it has not already been installed
 # Set this to "run" when you want TLDR to run without initialization attempts
 TLDR_RUN_MODE=${TLDR_RUN_MODE:-run}
 
@@ -63,14 +63,14 @@ TAG_PROFTPD=for_galaxy_19.01
 # Default tag for containers
 TAG_DEFAULT="$TAG_GALAXY"
 
-# Postgres password - If the postgres listener is not exposed outside docker 
+# Postgres password - If the postgres listener is not exposed outside docker
 #    containers, there should be little risk in exposing the password here.
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-chaopagoosaequuashie}
 
 GALAXY_PORT=8080
 
-# Ports to forward outside the "rootless namespace"; 
-#   you won't need these if you are running Docker as root 
+# Ports to forward outside the "rootless namespace";
+#   you won't need these if you are running Docker as root
 NET_ADD="
 0.0.0.0:8080:${GALAXY_PORT}/tcp
 0.0.0.0:5050:5050/tcp
@@ -90,7 +90,7 @@ CONTAINERS_TO_RUN='galaxy-postgres galaxy-slurm galaxy-web galaxy-proftpd rabbit
 # Extra exported environment variables to be set in the galaxy-web container
 EXTRA_GALAXY_ENVARS="
 GALAXY_PORT=${GALAXY_PORT}
-# postgres password - If the postgres listener is not exposed outside docker 
+# postgres password - If the postgres listener is not exposed outside docker
 #    containers, there should be little risk in exposing the password here.
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
