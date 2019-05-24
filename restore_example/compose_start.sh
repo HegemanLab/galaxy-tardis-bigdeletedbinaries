@@ -70,7 +70,6 @@ STOPPING=$DIR/STOPPING
 
 ROOTLESSCTL_SH_DIR="$( cd -P "$( dirname `which rootlesskit` )/.." >/dev/null 2>&1 && pwd )"
 
-TERM_ACTION="$DIR/compose_stop.sh; sleep 2; swab_orphans"
 TERM_ACTION="$DIR/compose_stop.sh; sleep 2; swab_orphans; exit 1"
 # catch request to stop
 trap "echo TERM caught; ${TERM_ACTION}" TERM

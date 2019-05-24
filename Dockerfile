@@ -68,10 +68,13 @@ COPY support/tardis                          /opt/support/tardis
 COPY support/tardis_setup                    /opt/support/tardis_setup
 # Daily backup cron task
 COPY support/backup.crontab                  /opt/support/backup.crontab
+COPY support/cron.sh                         /opt/support/cron.sh
 # Entrypoint executable
 COPY init                                    /opt/init
 # Support documentation in the unix-manual format
-RUN apk add man && bash -c "for i in {1..8}; do mkdir -p /usr/local/man/man${i}; done"
+RUN apk add man && bash -c 'for i in {1..8}; do mkdir -p /usr/local/man/man${i}; done'
+# To get the man pages themselves, uncomment the next line, but note that it nearly doubles the size of the image 
+#RUN apk add man-pages
 # Support the vim editor
 RUN apk add vim
 # Executable-file permissions (besides busybox and cvs because they are hard-linked)

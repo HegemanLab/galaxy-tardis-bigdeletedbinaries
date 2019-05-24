@@ -30,12 +30,17 @@ Usage:
   tardis restore_files         - Retrieve datasets from S3 (not desirable when using object store).
   tardis seed_database [date]  - Replace PostgreSQL database with copy from backup.
   tardis purge_empty_tmp_dirs  - Purge empty tmp directories that accumulate with datasets.
-  tardis cron                  - Run dcron NOT as daemon to run backup daily.
+  tardis cron [hour24]         - Run dcron NOT as daemon to run backup daily at 1 AM, or at hour24.
   tardis upgrade_database      - Upgrade the PostgreSQL database to match the Galaxy version.
-
-  tardis upgrade_conda [url_or_path] [md5sum]
-                               - Upgrade conda (e.g. from https://repo.continuum.io/miniconda/).
-  tardis bash                  - Enter a bash shell, if applicable.
+  tardis bash                  - Enter a bash shell.
+  tardis upgrade_conda <url_or_path> <md5sum> - Upgrade conda (both arguments required)
+where:
+  date        - can be relative (e.g., "1 hour ago") or absolute (e.g., any format accepted by the
+                  Linux `date` program, see e.g. http://man7.org/linux/man-pages/man1/date.1.html)
+  hour24      - any two digit hour for backup to occur; must be UTC (GMT), not local time.
+  url_or_path - any URL from https://repo.continuum.io/miniconda/, or path (e.g., if you
+                  copied the miniconda installer to your export directory)
+  md5sum      - MD5 digest for url_or_path, e.g., from https://repo.continuum.io/miniconda/
 
 Optional environment variables:
   EXPORT_DIR (default "/export") - path to directory containing "galaxy-central"
@@ -104,6 +109,9 @@ reqmnt() {
 }
 
 case "$subcommand" in
+  cron)
+    ./cron.sh ${subarg}
+    ;;
   backup)
     echo ---
     echo `date -I'seconds'` Backup starting
