@@ -103,7 +103,7 @@ fi
 
 echo "#*#*#*#*#*#*#*#  Starting Galaxy  #*#*#*#*#*#*#*#"
 # Start Galaxy - kill by pressing control-C only ONCE for a clean shutdown.
-./compose_start.sh # or, if screen is installed:
+which screen && screen -S ${MY_INSTANCE:?} ./compose_start.sh
+which screen || ./compose_start.sh # or, if screen is installed:
 # screen -S ${MY_INSTANCE:?} ./compose_start.sh        # Start composition in foreground
 # screen -S ${MY_INSTANCE:?} -d -m ./compose_start.sh  # Start composition in foreground
-

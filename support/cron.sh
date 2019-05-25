@@ -1,6 +1,6 @@
 #!/bin/bash
 NOSUB=true
-echo $1 | grep -E '(^[01][0-9]$)|(^2[0-3]$)' && NOSUB=false
+echo "$1" | grep -E '(^[01][0-9]$)|(^2[0-3]$)' && NOSUB=false
 if [ "NOSUB_$NOSUB" ==  "NOSUB_false" ]; then
   sed -e "s/\<01\>/$1/" backup.crontab > backup.crontab.use
 else

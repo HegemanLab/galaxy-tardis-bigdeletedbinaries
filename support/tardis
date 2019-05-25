@@ -20,24 +20,25 @@ source $DIR/tardis_setup
 #  Note well: Execute this from *outside* a container
 usage() {
   echo '
-tardis - Temporal Archive Remote Distribution and Installation System
+tardis - Temporal Archive Remote Distribution and Installation System for Galaxy-in-Docker
 
 Usage:
   tardis backup                - Back up PostgreSQL database and galaxy-central/config.
   tardis transmit              - Transmit datasets and backup to Amazon-S3-compatible storage.
+  tardis cron [hour24UTC]      - Run backup and transmit daily at hour24 UTC.
+  tardis restore_files         - Retrieve datasets from S3 (not desirable when using object store).
   tardis retrieve_config       - Retrieve database and config backup (but not datasets) from S3.
   tardis apply_config [date]   - Restore config from backup, whether from S3 or "tardis backup".
-  tardis restore_files         - Retrieve datasets from S3 (not desirable when using object store).
   tardis seed_database [date]  - Replace PostgreSQL database with copy from backup.
   tardis purge_empty_tmp_dirs  - Purge empty tmp directories that accumulate with datasets.
-  tardis cron [hour24]         - Run dcron NOT as daemon to run backup daily at 1 AM, or at hour24.
   tardis upgrade_database      - Upgrade the PostgreSQL database to match the Galaxy version.
   tardis bash                  - Enter a bash shell.
-  tardis upgrade_conda <url_or_path> <md5sum> - Upgrade conda (both arguments required)
+  tardis upgrade_conda {url_or_path} {md5sum}
+                               - Upgrade conda (both arguments required)
 where:
   date        - can be relative (e.g., "1 hour ago") or absolute (e.g., any format accepted by the
                   Linux `date` program, see e.g. http://man7.org/linux/man-pages/man1/date.1.html)
-  hour24      - any two digit hour for backup to occur; must be UTC (GMT), not local time.
+  hour24UTC   - any two digit hour for backup to occur; must be UTC (GMT), not local time.
   url_or_path - any URL from https://repo.continuum.io/miniconda/, or path (e.g., if you
                   copied the miniconda installer to your export directory)
   md5sum      - MD5 digest for url_or_path, e.g., from https://repo.continuum.io/miniconda/
@@ -48,7 +49,6 @@ Optional environment variables:
   PGDATA (default "/var/lib/postgresql/data") - internal path to database in "galaxy-postgres"
     - Optional, used by "backup" and "seed_database"
   PGDATA_SUBDIR (default "main") - name of subdirectory of PGDATA_PARENT where PostgreSQL database lives
-
 Required environment Variables (set using the "-e" option of the "docker run")
   These are the environment variables and the tasks that require them:
     HOST_EXPORT_DIR - host path to the EXPORT_DIR as bind-mounted in docker
@@ -62,14 +62,11 @@ Required environment Variables (set using the "-e" option of the "docker run")
       - Used by "seed database"
     TAG_POSTGRES - tag for docker image for PostgreSQL, e.g., "9.6.5_for_19.01"
       - Used by "seed database"
-
 Required bind-mounts:
-  "'${EXPORT_DIR}'"
-    - required by all but "bash" and "help"
-  "/var/run/docker.sock"
-    - required by "seed_database", "backup"
-  "/opt/s3/dest.s3cfg" and "/opt/s3/dest.s3cfg"
-    - required by "transmit", "retrieve_config", and "restore_files"
+  "'${EXPORT_DIR}'"       - required by all but "bash" and "help"
+  "/var/run/docker.sock"  - required by "seed_database", "backup"
+  "/opt/s3/dest.s3cfg"    - required by "transmit", "retrieve_config", and "restore_files"
+  "/opt/s3/dest.config"   - required by "transmit", "retrieve_config", and "restore_files"
   '
 }
 if [ $# -lt 1 ]; then
@@ -113,6 +110,7 @@ case "$subcommand" in
     ./cron.sh ${subarg}
     ;;
   backup)
+    reqmnt /var/run/docker.sock ${EXPORT_DIR}
     echo ---
     echo `date -I'seconds'` Backup starting
 
@@ -154,6 +152,7 @@ case "$subcommand" in
     exit 0
     ;;
   transmit)
+    reqmnt /opt/s3/dest.config /opt/s3/dest.s3cfg /var/run/docker.sock ${EXPORT_DIR}
     echo ---
     echo `date -I'seconds'` Transmit starting
     if [ ! -d ${EXPORT_DIR}/var/log ]; then
@@ -178,7 +177,7 @@ case "$subcommand" in
     exit 0
     ;;
   retrieve_config)
-    reqmnt ${EXPORT_DIR}
+    reqmnt /opt/s3/dest.config /opt/s3/dest.s3cfg ${EXPORT_DIR}
     echo ---
     echo `date -I'seconds'` Retrieve config starting
     bash $DIR/retrieve_backup.sh || exit 1
@@ -187,7 +186,7 @@ case "$subcommand" in
     exit 0
     ;;
   apply_config)
-    reqmnt ${EXPORT_DIR}
+    reqmnt /var/run/docker.sock ${EXPORT_DIR}
     cpcvs
     echo ---
     echo `date -I'seconds'` Apply config starting
@@ -199,6 +198,7 @@ case "$subcommand" in
     exit 0
     ;;
   restore_files)
+    reqmnt /opt/s3/dest.config /opt/s3/dest.s3cfg ${EXPORT_DIR}
     echo ---
     echo `date -I'seconds'` Restore files starting
     chown galaxy:galaxy ${EXPORT_DIR}/database/files
@@ -221,6 +221,7 @@ case "$subcommand" in
     exit 0
     ;;
   purge_empty_tmp_dirs)
+    reqmnt ${EXPORT_DIR}
     echo ---
     echo `date -I'seconds'` "Purge empty tmp dirs starting"
     find ${EXPORT_DIR}/galaxy-central/database/files/ -maxdepth 1 -type d -name 'tmp*' -exec rmdir {} \;
