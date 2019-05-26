@@ -240,8 +240,8 @@ case "$subcommand" in
     exit 0
     ;;
   bash)
-    bash
-    exit $?
+    shift
+    exec /bin/bash "$@"
     ;;
   help)
     usage

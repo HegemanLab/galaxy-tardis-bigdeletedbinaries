@@ -5,6 +5,27 @@ RUN sed -i -e 's/^postgres:x:[^:]*:[^:]*:/postgres:x:999:999:/' /etc/passwd
 RUN sed -i -e 's/^postgres:x:[^:]*:/postgres:x:999:/'           /etc/group
 RUN adduser -s /bin/bash -h /export -D -H -u 1450 -g "Galaxy-file owner" galaxy
 
+# The coreutils binary adds a megabyte to the image size,
+#   but it gives some required invocation options for 'date'
+RUN apk add coreutils
+# Including bash (required), curl (handy)
+RUN apk add bash curl python3
+# Support scheduled activity, e.g., daily backups
+RUN apk add dcron
+# Support documentation in the unix-manual format
+RUN apk add man && bash -c 'for i in {1..8}; do mkdir -p /usr/local/man/man${i}; done'
+# To get all of the standard man pages themselves, you could uncomment the next line,
+#   but note that it nearly doubles the size of the image.
+#RUN apk add man-pages
+# Support the vim editor
+RUN apk add vim
+
+# Fix "pip not found" error and suppress warning about outdated pip, if any
+RUN pip3 install --upgrade pip
+# Include s3cmd for transmitting files to Amazon-S3 compatible buckets.  See e.g.:
+#   https://en.wikipedia.org/wiki/Amazon_S3#S3_API_and_competing_services
+RUN pip install s3cmd
+
 # Substitute statically linked busybox so that it can be shared with glibc-based containers
 #   See https://github.com/eschen42/alpine-cbuilder#statically-linked-busybox
 #   and https://github.com/HegemanLab/galaxy-tardis/releases/tag/binary1-pre
