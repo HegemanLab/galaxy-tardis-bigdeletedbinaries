@@ -1,15 +1,24 @@
 FROM alpine:3.9.3
-MAINTAINER Art Eschenlauer, esch0041@umn.edu
+LABEL maintainer="'Art Eschenlauer, esch0041@umn.edu'"
+
+###################################  Accounts and Groups  ####################################
 # Add required galaxy and postgres accounts
 RUN sed -i -e 's/^postgres:x:[^:]*:[^:]*:/postgres:x:999:999:/' /etc/passwd
 RUN sed -i -e 's/^postgres:x:[^:]*:/postgres:x:999:/'           /etc/group
 RUN adduser -s /bin/bash -h /export -D -H -u 1450 -g "Galaxy-file owner" galaxy
 
+######################################  Python Basis  ########################################
+# Base python for the image as Python3
+RUN apk add python3
+# prevent "pip not found" error and suppress warning about outdated pip, if any
+RUN pip3 install --upgrade pip
+
+########################################  Packages  ##########################################
 # The coreutils binary adds a megabyte to the image size,
 #   but it gives some required invocation options for 'date'
 RUN apk add coreutils
 # Including bash (required), curl (handy)
-RUN apk add bash curl python3
+RUN apk add bash curl
 # Support scheduled activity, e.g., daily backups
 RUN apk add dcron
 # Support documentation in the unix-manual format
@@ -20,12 +29,11 @@ RUN apk add man && bash -c 'for i in {1..8}; do mkdir -p /usr/local/man/man${i};
 # Support the vim editor
 RUN apk add vim
 
-# Fix "pip not found" error and suppress warning about outdated pip, if any
-RUN pip3 install --upgrade pip
 # Include s3cmd for transmitting files to Amazon-S3 compatible buckets.  See e.g.:
 #   https://en.wikipedia.org/wiki/Amazon_S3#S3_API_and_competing_services
 RUN pip install s3cmd
 
+####################################  Large Binaries  #######################################
 # Substitute statically linked busybox so that it can be shared with glibc-based containers
 #   See https://github.com/eschen42/alpine-cbuilder#statically-linked-busybox
 #   and https://github.com/HegemanLab/galaxy-tardis/releases/tag/binary1-pre
@@ -66,6 +74,7 @@ RUN cd /opt/support && \
     chmod +x cvs
 RUN ln       /opt/support/cvs                /usr/local/bin/cvs
 
+######################################## Scripts ##########################################
 # Support file, configuration, and database backup and restore with S3-compatible block storage
 COPY s3/live_file_backup.sh                  /opt/s3/live_file_backup.sh
 COPY s3/live_file_restore.sh                 /opt/s3/live_file_restore.sh
@@ -92,17 +101,15 @@ COPY support/backup.crontab                  /opt/support/backup.crontab
 COPY support/cron.sh                         /opt/support/cron.sh
 # Entrypoint executable
 COPY init                                    /opt/init
-# Support documentation in the unix-manual format
-RUN apk add man && bash -c 'for i in {1..8}; do mkdir -p /usr/local/man/man${i}; done'
-# To get the man pages themselves, uncomment the next line, but note that it nearly doubles the size of the image 
-#RUN apk add man-pages
-# Support the vim editor
-RUN apk add vim
+
+#######################################  Permissions  ######################################
 # Executable-file permissions (besides busybox and cvs because they are hard-linked)
 RUN chmod +x                                 /opt/init
 RUN chmod +x                                 /opt/s3/*.sh
 RUN chmod +x                                 /opt/support/*.sh
 RUN chmod +x                                 /opt/support/tardis
+
+#######################################  Wrapping Up  ######################################
 # Set the entry point
 ENTRYPOINT ["/opt/init"]
 # Provide intra-container copy of this container-definition
